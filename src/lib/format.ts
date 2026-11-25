@@ -35,4 +35,8 @@ export function pluralOutcome(outcome: string, n: number) {
   return `${n} ${words.join(" ")}`;
 }
 
-export const maskPhone = (p: string) => p.replace(/(\+91\s?\d{2})\d+(\d{3})$/, "$1•••••$2");
+// "+91 99887 66554" or "+919988766554" -> "+91 99•••••554"
+export function maskPhone(p: string) {
+  const d = p.replace(/\D/g, "").slice(-10);
+  return d.length === 10 ? `+91 ${d.slice(0, 2)}•••••${d.slice(-3)}` : p;
+}

@@ -1,7 +1,14 @@
 // Run: node --test --experimental-strip-types src/lib/format.test.ts
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { pct, pluralOutcome } from "./format.ts";
+import { maskPhone, pct, pluralOutcome } from "./format.ts";
+
+test("maskPhone hides the middle digits in any format", () => {
+  assert.equal(maskPhone("+91 99887 66554"), "+91 99•••••554");
+  assert.equal(maskPhone("+919988766554"), "+91 99•••••554");
+  assert.equal(maskPhone("9988766554"), "+91 99•••••554");
+  assert.equal(maskPhone("12345"), "12345");
+});
 
 test("pluralOutcome pluralises the noun before the verb", () => {
   assert.equal(pluralOutcome("Site visit booked", 8), "8 site visits booked");

@@ -33,10 +33,10 @@ export default async function Dashboard() {
   const wins = calls.filter((c) => c.outcome && agents.some((a) => a.outcome === c.outcome)).slice(0, 6);
 
   const kpis = [
-    { label: "Outcomes", value: num(m.outcomes), prev: mp.outcomes, now: m.outcomes, spark: trend.map((d) => d.outcomes), sub: `${pct(m.outcomeRate)} of connected calls` },
+    { label: "Wins · all employees", value: num(m.outcomes), prev: mp.outcomes, now: m.outcomes, spark: trend.map((d) => d.outcomes), sub: `${pct(m.outcomeRate, m.connected > 0)} of connected calls` },
     { label: "Connect rate", value: pct(m.connectRate), prev: mp.connectRate, now: m.connectRate, spark: trend.map((d) => (d.calls ? d.connected / d.calls : 0)), sub: `${num(m.connected)} of ${num(m.calls)} calls` },
     { label: "Spend", value: inr(m.spend), prev: mp.spend, now: m.spend, spark: trend.map((d) => d.connected), sub: `${num(Math.round(m.minutes))} talk minutes` },
-    { label: "Cost per outcome", value: m.outcomes ? inr(m.costPerOutcome) : "—", prev: mp.costPerOutcome, now: m.costPerOutcome, invert: true, spark: trend.map((d) => d.outcomes), sub: "what each booking cost you" },
+    { label: "Cost per win", value: m.outcomes ? inr(m.costPerOutcome) : "—", prev: mp.costPerOutcome, now: m.costPerOutcome, invert: true, spark: trend.map((d) => d.outcomes), sub: "what each booking cost you" },
   ];
 
   return (

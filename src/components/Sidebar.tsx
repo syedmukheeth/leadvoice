@@ -62,3 +62,22 @@ export function Sidebar({ workspace, credits, onDuty }: { workspace: string; cre
     </aside>
   );
 }
+
+// Phone / tablet navigation strip with the current page highlighted.
+export function MobileNav() {
+  const path = usePathname();
+  return (
+    <nav className="lg:hidden flex gap-1 overflow-x-auto border-t border-line px-4 py-2 text-[13px] [scrollbar-width:none]">
+      {NAV.map(({ href, label }) => {
+        const active = path === href || path.startsWith(href + "/");
+        return (
+          <Link key={href} href={href} aria-current={active ? "page" : undefined}
+            className={cx("whitespace-nowrap rounded-lg px-3 py-1.5 font-medium transition",
+              active ? "bg-ink text-white" : "text-muted hover:bg-surface hover:text-ink")}>
+            {label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
