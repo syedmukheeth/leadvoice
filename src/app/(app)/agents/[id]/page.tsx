@@ -42,7 +42,7 @@ export default async function AgentPage({ params, searchParams }: PageProps<"/ag
 
       <PageHeader eyebrow={`${tpl.industry} · ${languageById(agent.language).native} · ${voiceById(agent.voiceId, agent.language).name} voice`} title={<>{agent.name} <span className="italic text-ink-3">— {agent.outcome.toLowerCase()}</span></>}>
         <StatusToggle agentId={agent.id} status={agent.status} />
-        <TestCallButton agentId={agent.id} name={agent.name} languageLabel={languageById(agent.language).label} />
+        <TestCallButton agentId={agent.id} name={agent.name} languageLabel={languageById(agent.language).label} autoOpen={Boolean(hired)} />
       </PageHeader>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5 mb-5">

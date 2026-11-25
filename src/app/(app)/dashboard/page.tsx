@@ -25,7 +25,10 @@ export default async function Dashboard() {
   const trend = daily(calls, agents, 14);
   const hour = Number(new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata", hour: "numeric", hour12: false }).format(new Date()));
   const greet = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
-  const mainOutcome = agents.find((a) => a.status === "live")?.outcome ?? "Outcomes";
+  // Headline goal: the AI employee with the most wins this week (falls back to the first on duty).
+  const winsBy = (o: string) => week.filter((c) => c.outcome === o).length;
+  const mainOutcome = [...agents].sort((x, y) => winsBy(y.outcome) - winsBy(x.outcome))[0]?.outcome ?? "Outcomes";
+  const mainWins = winsBy(mainOutcome);
   const hot = leads.filter((l) => l.status === "hot").slice(0, 6);
   const wins = calls.filter((c) => c.outcome && agents.some((a) => a.outcome === c.outcome)).slice(0, 6);
 
@@ -38,7 +41,7 @@ export default async function Dashboard() {
 
   return (
     <>
-      <PageHeader eyebrow="Overview · last 7 days" title={<>{greet}. <span className="italic text-ink-3">{pluralOutcome(mainOutcome, m.outcomes)}</span> this week.</>}>
+      <PageHeader eyebrow="Overview · last 7 days" title={<>{greet}. <span className="italic text-ink-3">{pluralOutcome(mainOutcome, mainWins)}</span> this week.</>}>
         <Link href="/calls" className="text-[13px] font-semibold text-muted hover:text-ink">All calls →</Link>
       </PageHeader>
 

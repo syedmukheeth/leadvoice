@@ -22,12 +22,15 @@ export function ago(iso: string, now = Date.now()) {
   return `${Math.round(h / 24)} d ago`;
 }
 
-// "Site visit booked", 8 -> "8 site visits booked"; "Documents promised", 3 -> "3 documents promised"
+// "Site visit booked", 8 -> "8 site visits booked"; "Order confirmed successfully", 3 -> "3 orders confirmed successfully".
+// Pluralises the word before the past-tense verb (the last word ending in -ed).
 export function pluralOutcome(outcome: string, n: number) {
   const words = outcome.toLowerCase().split(" ");
-  if (n !== 1 && words.length > 1) {
-    const i = words.length - 2;
-    if (!words[i].endsWith("s")) words[i] += "s";
+  if (n !== 1) {
+    let verb = -1;
+    words.forEach((w, i) => { if (i > 0 && /ed$/.test(w)) verb = i; });
+    const noun = verb > 0 ? verb - 1 : words.length - 1;
+    if (!words[noun].endsWith("s")) words[noun] += "s";
   }
   return `${n} ${words.join(" ")}`;
 }

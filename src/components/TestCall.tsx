@@ -47,6 +47,7 @@ export function TestCall({ agentId, name, languageLabel, open, onClose }: {
   const [muted, setMuted] = useState(false);
   const [text, setText] = useState("");
   const [seconds, setSeconds] = useState(0);
+  const [slow, setSlow] = useState(false);
   const st = useRef<State>("idle");
   const mutedRef = useRef(false);
   const history = useRef<{ who: "agent" | "customer"; text: string }[]>([]);
@@ -60,6 +61,11 @@ export function TestCall({ agentId, name, languageLabel, open, onClose }: {
   const add = (l: Line) => setLines((x) => [...x, l]);
 
   useEffect(() => { mutedRef.current = muted; }, [muted]);
+  useEffect(() => { // explain long waits instead of looking frozen
+    if (state !== "thinking" && state !== "connecting") return;
+    const t = setTimeout(() => setSlow(true), 6000);
+    return () => { clearTimeout(t); setSlow(false); };
+  }, [state]);
   useEffect(() => { chat.current?.scrollTo({ top: 1e6, behavior: "smooth" }); }, [lines]);
   useEffect(() => {
     if (state === "idle" || state === "ended" || state === "connecting") return;
@@ -172,7 +178,7 @@ export function TestCall({ agentId, name, languageLabel, open, onClose }: {
           </div>
           <p className="mt-5 font-display text-[40px] leading-none">{name}</p>
           <p className={cx("mt-2 text-[13.5px]", state === "listening" || state === "hearing" ? "text-live" : "text-white/60")}>
-            {state === "idle" ? "Ready when you are" : LABEL[state]} {live && <span className="ml-1 tabular text-white/40">· {mm}</span>}
+            {state === "idle" ? "Ready when you are" : slow ? "Still thinking — the AI is busy, hang on…" : LABEL[state]} {live && <span className="ml-1 tabular text-white/40">· {mm}</span>}
           </p>
           <Waveform live={state === "speaking" || state === "hearing"} bars={40} className="mx-auto mt-5 h-10 justify-center"
             color={state === "speaking" ? "bg-signal" : state === "hearing" ? "bg-live" : "bg-white/15"} />
