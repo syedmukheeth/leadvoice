@@ -8,6 +8,7 @@ import { dayTime, inr, mmss, pct } from "@/lib/format";
 import { metrics, since } from "@/lib/metrics";
 import { getStore } from "@/lib/store";
 import { AgentEditor, StatusToggle } from "./AgentEditor";
+import { TestCallButton } from "@/components/TestCallButton";
 
 // Live workspace data: render on request (loading.tsx is the instant placeholder).
 export const instant = false;
@@ -34,13 +35,14 @@ export default async function AgentPage({ params, searchParams }: PageProps<"/ag
       {hired && (
         <div className="rise mb-6 flex flex-wrap items-center gap-3 rounded-2xl bg-ink px-5 py-4 text-white">
           <span className="text-2xl">🎉</span>
-          <p className="text-[14px]"><b>{agent.name} is hired and on duty.</b> Add leads and she starts calling within a minute, 9 AM – 9 PM.</p>
+          <p className="text-[14px]"><b>{agent.name} is hired and on duty.</b> Give her a test call first, then add leads — she starts calling within a minute, 9 AM – 9 PM.</p>
           <Link href="/leads" className="ml-auto rounded-xl bg-signal px-4 py-2 text-[13px] font-semibold text-ink">Add leads →</Link>
         </div>
       )}
 
       <PageHeader eyebrow={`${tpl.industry} · ${languageById(agent.language).native} · ${voiceById(agent.voiceId, agent.language).name} voice`} title={<>{agent.name} <span className="italic text-ink-3">— {agent.outcome.toLowerCase()}</span></>}>
         <StatusToggle agentId={agent.id} status={agent.status} />
+        <TestCallButton agentId={agent.id} name={agent.name} languageLabel={languageById(agent.language).label} />
       </PageHeader>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5 mb-5">
