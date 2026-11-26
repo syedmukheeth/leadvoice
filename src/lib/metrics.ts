@@ -33,19 +33,23 @@ export function metrics(calls: Call[], agents: Agent[]): Metrics {
   };
 }
 
-export function daily(calls: Call[], agents: Agent[], days = 14, now = new Date()) {
-  const winning = new Set(agents.map((a) => a.outcome));
-  const out: { date: string; calls: number; connected: number; outcomes: number }[] = [];
+export interface Day { date: string; calls: number; connected: number; outcomes: number; spend: number }
+
+// Calendar day in India time (YYYY-MM-DD), so a 2 AM call counts on the day it happened.
+const istDay = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit" });
+export const dayKey = (d: Date | string) => istDay.format(typeof d === "string" ? new Date(d) : d);
+
+export function daily(calls: Call[], agents: Agent[], days = 14, now = new Date()): Day[] {
+  const byDay = new Map<string, Call[]>();
+  for (const c of calls) {
+    const k = dayKey(c.startedAt);
+    byDay.set(k, [...(byDay.get(k) ?? []), c]);
+  }
+  const out: Day[] = [];
   for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(now.getTime() - i * 86400000);
-    const key = d.toISOString().slice(0, 10);
-    const day = calls.filter((c) => c.startedAt.slice(0, 10) === key);
-    out.push({
-      date: key,
-      calls: day.length,
-      connected: day.filter((c) => c.status === "connected").length,
-      outcomes: day.filter((c) => c.outcome && winning.has(c.outcome)).length,
-    });
+    const date = dayKey(new Date(now.getTime() - i * 86400000));
+    const m = metrics(byDay.get(date) ?? [], agents);
+    out.push({ date, calls: m.calls, connected: m.connected, outcomes: m.outcomes, spend: m.spend });
   }
   return out;
 }

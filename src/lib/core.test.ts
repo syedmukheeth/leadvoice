@@ -50,4 +50,14 @@ test("metrics and daily series add up", () => {
   assert.equal(d.length, 14);
   assert.equal(d.reduce((a, x) => a + x.calls, 0), s.calls.length, "14-day series covers every sample call");
   assert.deepEqual(metrics([], s.agents).calls, 0);
+  assert.ok(d.every((x) => x.outcomes <= x.connected && x.connected <= x.calls), "wins counted on connected calls only");
+});
+
+test("daily buckets calls by India date, not UTC", () => {
+  const now = new Date("2026-11-25T18:00:00+05:30");
+  const s = buildDemoStore(now);
+  // 1:30 AM IST on 25 Nov is still 24 Nov in UTC.
+  const call = { ...s.calls[0], startedAt: new Date("2026-11-25T01:30:00+05:30").toISOString() };
+  const d = daily([call], s.agents, 2, now);
+  assert.deepEqual(d.map((x) => [x.date, x.calls]), [["2026-11-24", 0], ["2026-11-25", 1]]);
 });
