@@ -6,9 +6,9 @@ import { setting } from "@/lib/env";
 
 // What each voice says in its sample, written the way people really talk on the phone.
 const SAMPLES: Record<string, string> = {
-  te: "హలో సార్, నమస్కారం! నేను గ్రీన్ వ్యాలీ నుంచి మాట్లాడుతున్నాను. మీరు మా ప్లాట్స్ గురించి ఎంక్వైరీ చేశారు కదా, రెండు నిమిషాలు మాట్లాడొచ్చా?",
-  hi: "हैलो सर, नमस्ते! मैं ग्रीन वैली से बात कर रही हूँ। आपने हमारे प्लॉट्स के बारे में पूछा था, क्या दो मिनट बात कर सकते हैं?",
-  en: "Hi, good afternoon! I'm calling from Green Valley about the plots you enquired about. Do you have two minutes to talk?",
+  te: "హలో సార్, నమస్కారం! నేను ASRG Constructions నుంచి మాట్లాడుతున్నాను. మీరు మా plots గురించి enquiry చేశారు కదా, రెండు నిమిషాలు మాట్లాడొచ్చా?",
+  hi: "हैलो सर, नमस्ते! मैं ASRG Constructions से बात कर रही हूँ। आपने हमारे plots के बारे में पूछा था, क्या दो मिनट बात कर सकते हैं?",
+  en: "Hi, good afternoon! I'm calling from ASRG Constructions about the plots you enquired about. Do you have two minutes to talk?",
 };
 const LANG_CODE: Record<string, string> = { te: "te-IN", hi: "hi-IN", en: "en-IN" };
 

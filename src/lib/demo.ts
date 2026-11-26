@@ -20,7 +20,7 @@ export const DEMO_AGENTS: Agent[] = [
     template: "real_estate", language: "te", voiceId: "kavitha_te_conversation", direction: "both",
     opening: "నమస్కారం {name} గారు, నేను గ్రీన్ వ్యాలీ డెవలపర్స్ నుంచి AI అసిస్టెంట్ కావ్య. మీరు మా ప్లాట్స్ గురించి ఎంక్వైరీ చేశారు కదా — రెండు నిమిషాలు మాట్లాడొచ్చా?",
     script: "1. Greet by name, say you are the AI assistant, mention their enquiry.\n2. Ask: own use or investment?\n3. Ask budget and preferred plot size or facing.\n4. Answer questions only from the knowledge section.\n5. Offer a site visit this weekend; repeat day and time to confirm.\n6. If busy, book a callback at a time they choose.\n7. Save everything and thank them.",
-    knowledge: "Green Valley Layout, Guntur bypass near NH-16.\nDTCP approved, RERA registered.\nPlots 150 / 200 / 267 sq yd at ₹9,000 per sq yd.\nFree pickup from Guntur bus stand on weekends.",
+    knowledge: "ASRG Constructions layout, Guntur bypass near NH-16.\nDTCP approved, RERA registered.\nPlots 150 / 200 / 267 sq yd at ₹9,000 per sq yd.\nFree pickup from Guntur bus stand on weekends.",
     actions: ["save_lead", "book_visit", "callback", "transfer", "whatsapp", "memory"], outcome: "Site visit booked",
     status: "live", createdAt: "2026-11-02T10:00:00+05:30",
   },
@@ -36,7 +36,7 @@ export const DEMO_AGENTS: Agent[] = [
   {
     id: "ag_arjun", name: "Arjun", role: "Answers the sales office line in English and books meetings with the team.",
     template: "real_estate", language: "en", voiceId: "dev_en_conversational", direction: "inbound",
-    opening: "Hello, thank you for calling Green Valley Developers. I'm Arjun, the AI assistant. How can I help you today?",
+    opening: "Hello, thank you for calling ASRG Constructions. I'm Arjun, the AI assistant. How can I help you today?",
     script: "1. Answer warmly.\n2. Understand what they need.\n3. Book a meeting or transfer to sales.",
     knowledge: "Office: Guntur, near the bus stand. 9 AM – 7 PM, all days.",
     actions: ["book_visit", "transfer", "memory"], outcome: "Meeting booked",
@@ -121,7 +121,7 @@ export function buildDemoStore(now = new Date()): Store {
 
   return {
     workspace: {
-      name: "Green Valley Developers", industry: "Real estate", creditsInr: 4820,
+      name: "ASRG Constructions", industry: "Real estate", creditsInr: 4820,
       number: { e164: "+91 80 4718 2290", status: "active" },
       webhookUrl: "https://hooks.example.com/leadvoice",
       apiKeys: [{ id: "key_1", label: "Website form", prefix: "lv_live_8f3a", createdAt: "2026-11-05T10:00:00+05:30", lastUsedAt: now.toISOString() }],
