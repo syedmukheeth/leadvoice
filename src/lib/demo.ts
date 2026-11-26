@@ -18,7 +18,7 @@ export const DEMO_AGENTS: Agent[] = [
   {
     id: "ag_kavya", name: "Kavya", role: "Calls every plot enquiry, finds the budget and books a Sunday site visit.",
     template: "real_estate", language: "te", voiceId: "kavitha_te_conversation", direction: "both",
-    opening: "నమస్కారం {name} గారు, నేను గ్రీన్ వ్యాలీ డెవలపర్స్ నుంచి AI అసిస్టెంట్ కావ్య. మీరు మా ప్లాట్స్ గురించి ఎంక్వైరీ చేశారు కదా — రెండు నిమిషాలు మాట్లాడొచ్చా?",
+    opening: "నమస్కారం {name} గారు, నేను ASRG Constructions నుంచి AI అసిస్టెంట్ కావ్య. మీరు మా ప్లాట్స్ గురించి ఎంక్వైరీ చేశారు కదా — రెండు నిమిషాలు మాట్లాడొచ్చా?",
     script: "1. Greet by name, say you are the AI assistant, mention their enquiry.\n2. Ask: own use or investment?\n3. Ask budget and preferred plot size or facing.\n4. Answer questions only from the knowledge section.\n5. Offer a site visit this weekend; repeat day and time to confirm.\n6. If busy, book a callback at a time they choose.\n7. Save everything and thank them.",
     knowledge: "ASRG Constructions layout, Guntur bypass near NH-16.\nDTCP approved, RERA registered.\nPlots 150 / 200 / 267 sq yd at ₹9,000 per sq yd.\nFree pickup from Guntur bus stand on weekends.",
     actions: ["save_lead", "book_visit", "callback", "transfer", "whatsapp", "memory"], outcome: "Site visit booked",
@@ -27,7 +27,7 @@ export const DEMO_AGENTS: Agent[] = [
   {
     id: "ag_meera", name: "Meera", role: "Reminds home-loan applicants to upload documents and notes who promises.",
     template: "loans", language: "hi", voiceId: "ritu_hi_conversation", direction: "outbound",
-    opening: "नमस्ते {name} जी, मैं मीरा, ग्रीन वैली होम लोन्स से AI असिस्टेंट बोल रही हूँ। आपके लोन के documents के बारे में दो मिनट बात कर सकते हैं?",
+    opening: "नमस्ते {name} जी, मैं मीरा, ASRG Constructions से AI असिस्टेंट बोल रही हूँ। आपके लोन के documents के बारे में दो मिनट बात कर सकते हैं?",
     script: "1. Greet, confirm it is a good time.\n2. Check which documents are pending.\n3. Get a date by which they will upload.\n4. Offer to send the upload link on WhatsApp.",
     knowledge: "Needed: PAN, Aadhaar, last 3 payslips, 6-month bank statement.\nUpload link: sent on WhatsApp.",
     actions: ["save_lead", "callback", "whatsapp", "webhook"], outcome: "Documents promised",
@@ -38,14 +38,14 @@ export const DEMO_AGENTS: Agent[] = [
     template: "real_estate", language: "en", voiceId: "dev_en_conversational", direction: "inbound",
     opening: "Hello, thank you for calling ASRG Constructions. I'm Arjun, the AI assistant. How can I help you today?",
     script: "1. Answer warmly.\n2. Understand what they need.\n3. Book a meeting or transfer to sales.",
-    knowledge: "Office: Guntur, near the bus stand. 9 AM – 7 PM, all days.",
+    knowledge: "Office: Guntur, near the bus stand. 9 AM to 7 PM, all days.",
     actions: ["book_visit", "transfer", "memory"], outcome: "Meeting booked",
     status: "paused", createdAt: "2026-11-20T10:00:00+05:30",
   },
 ];
 
 const TELUGU_CALL: [TranscriptLine["who"], string][] = [
-  ["agent", "నమస్కారం {name} గారు, నేను గ్రీన్ వ్యాలీ డెవలపర్స్ నుంచి AI అసిస్టెంట్ కావ్య. మీరు మా ప్లాట్స్ గురించి ఎంక్వైరీ చేశారు కదా — రెండు నిమిషాలు మాట్లాడొచ్చా?"],
+  ["agent", "నమస్కారం {name} గారు, నేను ASRG Constructions నుంచి AI అసిస్టెంట్ కావ్య. మీరు మా ప్లాట్స్ గురించి ఎంక్వైరీ చేశారు కదా — రెండు నిమిషాలు మాట్లాడొచ్చా?"],
   ["customer", "హా, చెప్పండి."],
   ["agent", "థాంక్యూ సార్. మీరు ఇల్లు కట్టుకోవడానికా, లేక ఇన్వెస్ట్‌మెంట్ కోసమా?"],
   ["customer", "ఇల్లు కట్టుకోవడానికి. బడ్జెట్ ఇరవై లక్షల వరకు."],
@@ -57,7 +57,7 @@ const TELUGU_CALL: [TranscriptLine["who"], string][] = [
 ];
 
 const HINDI_CALL: [TranscriptLine["who"], string][] = [
-  ["agent", "नमस्ते {name} जी, मैं मीरा, ग्रीन वैली होम लोन्स से AI असिस्टेंट। दो मिनट बात कर सकते हैं?"],
+  ["agent", "नमस्ते {name} जी, मैं मीरा, ASRG Constructions से AI असिस्टेंट। दो मिनट बात कर सकते हैं?"],
   ["customer", "हाँ जी, बोलिए।"],
   ["agent", "आपकी payslips और bank statement अभी pending हैं। आप इन्हें कब तक upload कर पाएँगे?"],
   ["customer", "शुक्रवार तक कर दूँगा।"],
