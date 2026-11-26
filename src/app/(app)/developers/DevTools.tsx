@@ -5,7 +5,7 @@ import { Check, Copy } from "lucide-react";
 import { Button } from "@/components/ui";
 import { createApiKey, saveWebhook } from "@/lib/actions";
 
-const field = "w-full rounded-xl border border-line bg-paper/60 px-3.5 py-2.5 text-[13.5px] outline-none focus:border-ink focus:bg-surface";
+const field = "w-full rounded-lg border border-line bg-paper px-3.5 py-2 text-[13.5px] text-ink outline-none transition-colors placeholder:text-faint focus:border-line-2 focus:bg-surface";
 
 export function KeyMaker() {
   const [label, setLabel] = useState("");
@@ -14,15 +14,15 @@ export function KeyMaker() {
   const [pending, start] = useTransition();
   if (secret) {
     return (
-      <div className="rounded-xl bg-signal-soft p-4">
-        <p className="text-[13px] font-semibold">Copy this key now — it won&apos;t be shown again.</p>
+      <div className="rounded-lg border border-accent/20 bg-accent-soft p-4">
+        <p className="text-[13px] font-semibold text-ink">Copy this key now. It won&apos;t be shown again.</p>
         <div className="mt-2 flex items-center gap-2">
           <code className="flex-1 truncate rounded-lg bg-surface px-3 py-2 font-mono text-[12px]">{secret}</code>
-          <Button variant="ghost" className="py-2" onClick={async () => { await navigator.clipboard.writeText(secret); setCopied(true); }}>
+          <Button variant="ghost" className="py-2" aria-label={copied ? "Copied" : "Copy key"} onClick={async () => { await navigator.clipboard.writeText(secret); setCopied(true); }}>
             {copied ? <Check size={15} /> : <Copy size={15} />}
           </Button>
         </div>
-        <button onClick={() => { setSecret(""); setLabel(""); setCopied(false); }} className="mt-3 text-[12.5px] font-semibold text-muted hover:text-ink">Done</button>
+        <button onClick={() => { setSecret(""); setLabel(""); setCopied(false); }} className="mt-3 text-[13px] font-medium text-muted hover:text-ink">Done</button>
       </div>
     );
   }

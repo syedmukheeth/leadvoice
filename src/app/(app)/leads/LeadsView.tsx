@@ -9,7 +9,7 @@ import type { Agent, Lead, LeadStatus } from "@/lib/types";
 
 type AgentLite = Pick<Agent, "id" | "name" | "status">;
 const COLUMNS: { key: LeadStatus; label: string; tone: string }[] = [
-  { key: "new", label: "New", tone: "bg-signal" },
+  { key: "new", label: "New", tone: "bg-accent" },
   { key: "hot", label: "Hot", tone: "bg-hot" },
   { key: "warm", label: "Warm", tone: "bg-warm" },
   { key: "cold", label: "Cold", tone: "bg-cold" },
@@ -47,35 +47,36 @@ export function LeadsView({ leads, agents }: { leads: Lead[]; agents: AgentLite[
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {COLUMNS.map((c) => (
           <button key={c.key} onClick={() => setStatus(status === c.key ? "all" : c.key)}
-            className={cx("rounded-2xl border bg-surface p-4 text-left transition", status === c.key ? "border-ink shadow-[0_0_0_3px_rgba(232,154,44,.22)]" : "border-line hover:border-line-2")}>
-            <span className="flex items-center gap-2 text-[12.5px] text-muted"><i className={cx("h-2 w-2 rounded-full", c.tone)} />{c.label}</span>
-            <span className="mt-1 block font-display text-[36px] leading-none tabular">{counts[c.key] ?? 0}</span>
+            aria-pressed={status === c.key}
+            className={cx("rounded-xl border bg-surface p-4 text-left elevate transition-[border-color,box-shadow]", status === c.key ? "border-accent shadow-[0_0_0_3px_var(--color-accent-soft)]" : "border-line hover:border-line-2")}>
+            <span className="flex items-center gap-2 text-[13px] text-muted"><i className={cx("h-1.5 w-1.5 rounded-full", c.tone)} />{c.label}</span>
+            <span className="mt-1.5 block text-[26px] font-semibold leading-none tracking-[-0.03em] text-ink">{counts[c.key] ?? 0}</span>
           </button>
         ))}
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <label className="flex w-full items-center gap-2 rounded-xl border border-line bg-surface px-3 py-2 sm:w-80">
-          <Search size={15} className="text-faint" />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search leads" className="w-full bg-transparent text-[13.5px] outline-none" />
+        <label className="flex w-full items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2 focus-within:border-line-2 sm:w-80">
+          <Search size={15} strokeWidth={1.75} className="text-faint" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search leads" className="w-full bg-transparent text-[13.5px] outline-none placeholder:text-faint" />
         </label>
-        {status !== "all" && <button onClick={() => setStatus("all")} className="text-[13px] font-semibold text-muted hover:text-ink">Clear filter</button>}
-        <Button onClick={() => setAdding(true)} variant="signal" className="ml-auto"><Plus size={15} strokeWidth={2.6} /> Add leads</Button>
+        {status !== "all" && <button onClick={() => setStatus("all")} className="rounded-lg px-2 py-1 text-[13px] font-medium text-muted hover:bg-cold-soft hover:text-ink">Clear filter</button>}
+        <Button onClick={() => setAdding(true)} className="ml-auto"><Plus size={15} strokeWidth={2} /> Add leads</Button>
       </div>
 
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[820px] text-[13.5px]">
             <thead>
-              <tr className="border-b border-line bg-paper/60 text-left text-[11px] uppercase tracking-[.1em] text-faint">
-                <th className="px-5 py-3 font-semibold">Lead</th><th className="px-3 font-semibold">Status</th><th className="px-3 font-semibold">Budget</th>
-                <th className="px-3 font-semibold">Notes</th><th className="px-3 font-semibold">Next</th><th className="px-3 font-semibold">Agent</th><th className="px-5 text-right font-semibold">Added</th>
+              <tr className="border-b border-line bg-paper text-left text-[12px] text-muted">
+                <th className="px-5 py-2.5 font-medium">Lead</th><th className="px-3 font-medium">Status</th><th className="px-3 font-medium">Budget</th>
+                <th className="px-3 font-medium">Notes</th><th className="px-3 font-medium">Next step</th><th className="px-3 font-medium">AI employee</th><th className="px-5 text-right font-medium">Added</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
               {list.slice(0, 300).map((l) => (
-                <tr key={l.id} className="hover:bg-paper/60">
-                  <td className="px-5 py-3"><p className="font-medium">{l.name}</p><p className="font-mono text-[11.5px] text-faint">{maskPhone(l.phone)} · {l.source}</p></td>
+                <tr key={l.id} className="transition-colors hover:bg-paper">
+                  <td className="px-5 py-3"><p className="font-medium text-ink">{l.name}</p><p className="text-[11.5px] text-faint"><span className="font-mono">{maskPhone(l.phone)}</span>, {l.source}</p></td>
                   <td className="px-3"><LeadBadge status={l.status} /></td>
                   <td className="px-3 tabular">{l.budget ?? "—"}</td>
                   <td className="max-w-[260px] px-3 text-muted"><p className="truncate">{l.notes ?? "—"}</p></td>
@@ -107,43 +108,43 @@ function AddLeads({ agents, onClose }: { agents: AgentLite[]; onClose: () => voi
   }
 
   return (
-    <div className="fixed inset-0 z-40 grid place-items-center bg-ink/40 p-4" onClick={onClose}>
-      <Card className="rise w-full max-w-[620px] p-6" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-40 grid place-items-center bg-ink/20 p-4 backdrop-blur-[2px]" onClick={onClose}>
+      <Card className="rise w-full max-w-[620px] p-6 shadow-[0_24px_64px_rgb(17_17_20/.16)]" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start">
           <div>
-            <h2 className="font-display text-[32px] leading-none">Add leads</h2>
+            <h2 className="text-[20px] font-semibold tracking-[-0.02em] text-ink">Add leads</h2>
             <p className="mt-1.5 text-[13.5px] text-muted">Paste numbers or upload a CSV. New leads are called within a minute during calling hours.</p>
           </div>
-          <button onClick={onClose} className="ml-auto rounded-lg p-1.5 text-faint hover:bg-paper hover:text-ink" aria-label="Close"><X size={18} /></button>
+          <button onClick={onClose} className="ml-auto rounded-lg p-1.5 text-faint transition-colors hover:bg-cold-soft hover:text-ink" aria-label="Close"><X size={18} strokeWidth={1.75} /></button>
         </div>
 
         {result ? (
-          <div className="mt-6 rounded-2xl bg-live-soft p-5">
-            <p className="font-display text-3xl">{result.added} leads added</p>
+          <div className="mt-6 rounded-lg border border-live/20 bg-live-soft p-5">
+            <p className="text-[18px] font-semibold tracking-[-0.02em] text-ink">{result.added} leads added</p>
             <p className="mt-1 text-[13.5px] text-muted">{result.skipped ? `${result.skipped} skipped (invalid or duplicate numbers). ` : ""}{agents.find((a) => a.id === agentId)?.name} starts calling them shortly.</p>
             <Button onClick={onClose} className="mt-4">Done</Button>
           </div>
         ) : (
           <>
             <textarea value={text} onChange={(e) => setText(e.target.value)} rows={7}
-              placeholder={"Ramesh Reddy, 98480 12345, Meta ad\nSita, 9908877665\n…or a CSV with name, phone, source columns"}
-              className="mt-5 w-full rounded-xl border border-line bg-paper/60 px-4 py-3 font-mono text-[13px] outline-none focus:border-ink focus:bg-surface" />
+              placeholder={"Ramesh Reddy, 98480 12345, Meta ad\nSita, 9908877665\nOr paste a CSV with name, phone and source columns"}
+              className="mt-5 w-full rounded-lg border border-line bg-paper px-4 py-3 font-mono text-[13px] outline-none placeholder:text-faint focus:border-line-2 focus:bg-surface" />
             <div className="mt-3 flex flex-wrap items-center gap-3">
-              <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-line px-3.5 py-2 text-[13px] font-semibold hover:border-line-2">
-                <FileUp size={15} /> Upload CSV
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-line px-3.5 py-2 text-[13px] font-medium transition-colors hover:border-line-2 hover:bg-paper">
+                <FileUp size={15} strokeWidth={1.75} /> Upload CSV
                 <input type="file" accept=".csv,.txt" className="sr-only" onChange={(e) => onFile(e.target.files?.[0])} />
               </label>
               <span className="text-[13px] text-muted">Who calls them?</span>
-              <select value={agentId} onChange={(e) => setAgentId(e.target.value)} className="rounded-xl border border-line bg-surface px-3 py-2 text-[13px]">
+              <select value={agentId} onChange={(e) => setAgentId(e.target.value)} className="rounded-lg border border-line bg-surface px-3 py-2 text-[13px]">
                 {agents.map((a) => <option key={a.id} value={a.id}>{a.name}{a.status !== "live" ? " (paused)" : ""}</option>)}
               </select>
-              <Button disabled={!rows.length || pending} variant="signal" className="ml-auto"
+              <Button disabled={!rows.length || pending} className="ml-auto"
                 onClick={() => start(async () => setResult(await addLeads(rows, agentId)))}>
                 {pending ? "Adding…" : `Add ${rows.length || ""} lead${rows.length === 1 ? "" : "s"}`}
               </Button>
             </div>
             {rows.length > 0 && (
-              <p className="mt-3 text-[12px] text-faint">Preview: {rows.slice(0, 3).map((r) => `${r.name || "?"} (${r.phone || "no number"})`).join(" · ")}{rows.length > 3 ? ` +${rows.length - 3} more` : ""}</p>
+              <p className="mt-3 text-[12px] text-faint">Preview: {rows.slice(0, 3).map((r) => `${r.name || "?"} (${r.phone || "no number"})`).join(", ")}{rows.length > 3 ? ` +${rows.length - 3} more` : ""}</p>
             )}
           </>
         )}

@@ -30,7 +30,7 @@ export function templateDraft(task: string, language: Language, templateKey: str
     "Greet by name, say you are an AI assistant, and why you are calling.",
     ...tpl.questions.map((q) => `Find out: ${q.toLowerCase()}.`),
     "Answer questions only from the knowledge below; if unsure, promise a callback from the team.",
-    `Goal: ${tpl.outcome.toLowerCase()} — repeat the date and time back to confirm.`,
+    `Goal: ${tpl.outcome.toLowerCase()}. Repeat the date and time back to confirm.`,
     "If they are busy, book a callback at a time they choose. Thank them and save everything.",
   ];
   return {

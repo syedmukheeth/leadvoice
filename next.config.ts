@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Keep the dev-only Next badge clear of the sidebar's credits panel.
+  devIndicators: { position: "bottom-right" },
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {

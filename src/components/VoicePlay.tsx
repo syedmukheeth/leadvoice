@@ -25,10 +25,10 @@ export function VoicePlay({ voice, lang, className }: { voice: string; lang: str
     <button
       type="button"
       onClick={toggle}
-      title={state === "error" ? "Sample unavailable — add your Sarvam key" : "Play a sample"}
+      title={state === "error" ? "Sample unavailable. Check the Sarvam key in .env" : "Play a sample"}
       className={cx(
         "grid h-9 w-9 shrink-0 place-items-center rounded-full transition",
-        state === "error" ? "bg-hot-soft text-hot" : "bg-ink text-white hover:bg-ink-2",
+        state === "error" ? "bg-hot-soft text-hot" : state === "playing" ? "bg-accent text-white" : "bg-ink text-white hover:bg-ink-2",
         className,
       )}
     >

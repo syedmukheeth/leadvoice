@@ -8,7 +8,7 @@ import { ACTIONS, voiceById, voicesFor } from "@/lib/catalog";
 import { setAgentStatus, updateAgent } from "@/lib/actions";
 import type { ActionKey, Agent } from "@/lib/types";
 
-const field = "w-full rounded-xl border border-line bg-paper/60 px-3.5 py-2.5 text-[14px] outline-none transition focus:border-ink focus:bg-surface";
+const field = "w-full rounded-lg border border-line bg-paper px-3.5 py-2.5 text-[14px] text-ink outline-none transition-colors placeholder:text-faint focus:border-line-2 focus:bg-surface";
 const TABS = ["Script", "Knowledge", "Actions", "Voice"] as const;
 
 export function AgentEditor({ agent }: { agent: Agent }) {
@@ -31,16 +31,17 @@ export function AgentEditor({ agent }: { agent: Agent }) {
 
   return (
     <Card>
-      <CardHead title="Train her">
-        {saved && <span className="flex items-center gap-1 text-[12px] font-semibold text-live"><Check size={14} /> Saved</span>}
-        <Button onClick={save} disabled={!dirty || pending} variant={dirty ? "signal" : "ghost"} className="py-2">
+      <CardHead title="Training">
+        {saved && <span className="flex items-center gap-1 text-[12.5px] font-medium text-live" role="status"><Check size={14} strokeWidth={2} /> Saved</span>}
+        <Button onClick={save} disabled={!dirty || pending} variant={dirty ? "primary" : "ghost"} className="py-1.5">
           {pending ? "Saving…" : "Save changes"}
         </Button>
       </CardHead>
       <div className="flex gap-1 border-b border-line px-4">
         {TABS.map((t) => (
           <button key={t} onClick={() => setTab(t)}
-            className={cx("-mb-px border-b-2 px-3 py-2.5 text-[13px] font-semibold transition", tab === t ? "border-signal text-ink" : "border-transparent text-faint hover:text-ink")}>
+            aria-pressed={tab === t}
+            className={cx("-mb-px border-b-2 px-3 py-2.5 text-[13px] font-medium transition-colors", tab === t ? "border-ink text-ink" : "border-transparent text-muted hover:text-ink")}>
             {t}
           </button>
         ))}
@@ -63,7 +64,7 @@ export function AgentEditor({ agent }: { agent: Agent }) {
           </>
         )}
         {tab === "Knowledge" && (
-          <Label text="What she knows" hint="She only shares facts written here; anything else, she promises a callback.">
+          <Label text="Knowledge" hint="Only facts written here are shared. Anything else gets a callback.">
             <textarea rows={14} className={cx(field, "leading-relaxed")} value={form.knowledge} onChange={(e) => setForm({ ...form, knowledge: e.target.value })} />
           </Label>
         )}
@@ -73,12 +74,13 @@ export function AgentEditor({ agent }: { agent: Agent }) {
               const on = form.actions.includes(k);
               return (
                 <button key={k} onClick={() => setForm({ ...form, actions: on ? form.actions.filter((x) => x !== k) : [...form.actions, k] })}
-                  className={cx("flex items-start gap-3 rounded-xl border p-3 text-left transition", on ? "border-ink" : "border-line opacity-70 hover:opacity-100")}>
-                  <span className={cx("mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md border", on ? "border-ink bg-ink text-white" : "border-line-2")}>
-                    {on && <Check size={13} strokeWidth={3} />}
+                  aria-pressed={on}
+                  className={cx("flex items-start gap-3 rounded-lg border p-3 text-left transition-colors", on ? "border-line-2 bg-surface" : "border-line bg-paper text-muted hover:border-line-2")}>
+                  <span className={cx("mt-0.5 grid h-4.5 w-4.5 shrink-0 place-items-center rounded-[5px] border", on ? "border-accent bg-accent text-white" : "border-line-2 bg-surface")}>
+                    {on && <Check size={12} strokeWidth={3} />}
                   </span>
                   <span>
-                    <span className="block text-[13px] font-semibold">{ACTIONS[k].label}</span>
+                    <span className="block text-[13px] font-semibold text-ink">{ACTIONS[k].label}</span>
                     <span className="block text-[12px] text-muted">{ACTIONS[k].hint}</span>
                   </span>
                 </button>
@@ -89,12 +91,12 @@ export function AgentEditor({ agent }: { agent: Agent }) {
         {tab === "Voice" && (
           <div className="grid gap-2 sm:grid-cols-2">
             {voicesFor(form.language).map((v) => (
-              <label key={v.id} className={cx("flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition", form.voiceId === v.id ? "border-ink bg-paper" : "border-line hover:bg-paper/60")}>
+              <label key={v.id} className={cx("flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors", form.voiceId === v.id ? "border-accent bg-accent-soft" : "border-line hover:bg-paper")}>
                 <input type="radio" className="sr-only" checked={form.voiceId === v.id} onChange={() => setForm({ ...form, voiceId: v.id })} />
                 <VoicePlay voice={v.id} lang={form.language} />
                 <span>
-                  <span className="block text-[13.5px] font-semibold">{v.name}</span>
-                  <span className="block text-[12px] text-muted">{v.gender === "female" ? "Female" : "Male"} · {v.tone}</span>
+                  <span className="block text-[13.5px] font-semibold text-ink">{v.name}</span>
+                  <span className="block text-[12px] text-muted">{v.gender === "female" ? "Female" : "Male"}, {v.tone.charAt(0).toLowerCase() + v.tone.slice(1)}</span>
                 </span>
               </label>
             ))}
@@ -108,7 +110,7 @@ export function AgentEditor({ agent }: { agent: Agent }) {
 function Label({ text, hint, children }: { text: string; hint?: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1.5 flex items-baseline gap-2 text-[13px] font-semibold">{text}{hint && <span className="text-[12px] font-normal text-faint">{hint}</span>}</span>
+      <span className="mb-1.5 flex flex-wrap items-baseline gap-x-2 text-[13px] font-semibold text-ink">{text}{hint && <span className="text-[12px] font-normal text-faint">{hint}</span>}</span>
       {children}
     </label>
   );
@@ -118,7 +120,7 @@ export function StatusToggle({ agentId, status }: { agentId: string; status: Age
   const [pending, start] = useTransition();
   const live = status === "live";
   return (
-    <Button variant={live ? "ghost" : "signal"} disabled={pending} onClick={() => start(() => setAgentStatus(agentId, live ? "paused" : "live"))}>
+    <Button variant={live ? "ghost" : "primary"} disabled={pending} onClick={() => start(() => setAgentStatus(agentId, live ? "paused" : "live"))}>
       {live ? <><Pause size={15} /> Pause calls</> : <><Play size={15} /> Put on duty</>}
     </Button>
   );

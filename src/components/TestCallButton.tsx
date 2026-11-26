@@ -11,7 +11,7 @@ export function TestCallButton({ agentId, name, languageLabel, autoOpen = false 
   const [open, setOpen] = useState(autoOpen);
   return (
     <>
-      <Button variant="signal" onClick={() => setOpen(true)}><Phone size={15} /> Test call</Button>
+      <Button variant="accent" onClick={() => setOpen(true)}><Phone size={15} /> Test call</Button>
       <TestCall agentId={agentId} name={name} languageLabel={languageLabel} open={open} onClose={() => setOpen(false)} />
     </>
   );

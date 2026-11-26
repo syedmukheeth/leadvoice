@@ -9,7 +9,7 @@ type State = "idle" | "connecting" | "speaking" | "listening" | "hearing" | "thi
 interface Line { who: "agent" | "customer" | "action" | "error"; text: string }
 
 const LABEL: Record<State, string> = {
-  idle: "", connecting: "Calling…", speaking: "Speaking", listening: "Listening — go ahead",
+  idle: "", connecting: "Calling…", speaking: "Speaking", listening: "Listening, go ahead",
   hearing: "Hearing you…", thinking: "Thinking…", ended: "Call ended",
 };
 
@@ -83,7 +83,7 @@ export function TestCall({ agentId, name, languageLabel, open, onClose }: {
       const d = await res.json();
       if (!res.ok) throw new Error(d.error ?? "No answer");
       if (payload.audio || payload.text) {
-        if (!d.heard) { set("listening"); add({ who: "error", text: "Didn't catch that — please say it again." }); return; }
+        if (!d.heard) { set("listening"); add({ who: "error", text: "Didn't catch that. Please say it again." }); return; }
         if (payload.audio) add({ who: "customer", text: d.heard }); // typed text is already on screen
         history.current.push({ who: "customer", text: d.heard });
       }
@@ -140,7 +140,7 @@ export function TestCall({ agentId, name, languageLabel, open, onClose }: {
       };
       mic.current = { ctx, stream, node };
     } catch {
-      add({ who: "error", text: "Microphone not available — you can still type to her below." });
+      add({ who: "error", text: "Microphone not available. You can still type below." });
     }
     await turn({ start: true });
   }
@@ -168,36 +168,36 @@ export function TestCall({ agentId, name, languageLabel, open, onClose }: {
   const mm = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-ink/80 p-4 backdrop-blur-sm">
-      <div className="rise relative flex h-[min(720px,92vh)] w-full max-w-[460px] flex-col overflow-hidden rounded-[32px] bg-ink text-white shadow-2xl">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-ink/60 p-4 backdrop-blur-sm">
+      <div className="rise relative flex h-[min(720px,92vh)] w-full max-w-[440px] flex-col overflow-hidden rounded-[28px] border border-white/10 bg-ink text-white shadow-[0_32px_80px_rgb(0_0_0/.35)]">
         <div className="px-7 pt-8 text-center">
-          <p className="text-[11px] uppercase tracking-[.18em] text-white/45">Test call · {languageLabel}</p>
+          <p className="text-[12.5px] text-white/55">Test call in {languageLabel}</p>
           <div className="relative mx-auto mt-6 h-28 w-28">
-            <span className={cx("absolute inset-0 rounded-full bg-signal/25", (state === "speaking" || state === "hearing") && "animate-ping")} />
-            <span className="relative grid h-28 w-28 place-items-center rounded-full bg-signal font-display text-6xl text-ink">{name[0]}</span>
+            <span className={cx("absolute inset-0 rounded-full bg-accent/30", (state === "speaking" || state === "hearing") && "animate-ping motion-reduce:animate-none")} />
+            <span className="relative grid h-28 w-28 place-items-center rounded-full bg-accent text-[44px] font-semibold text-white">{name[0]}</span>
           </div>
-          <p className="mt-5 font-display text-[40px] leading-none">{name}</p>
+          <p className="mt-5 text-[28px] font-semibold leading-none tracking-[-0.025em]">{name}</p>
           <p className={cx("mt-2 text-[13.5px]", state === "listening" || state === "hearing" ? "text-live" : "text-white/60")}>
-            {state === "idle" ? "Ready when you are" : slow ? "Still thinking — the AI is busy, hang on…" : LABEL[state]} {live && <span className="ml-1 tabular text-white/40">· {mm}</span>}
+            {state === "idle" ? "Ready when you are" : slow ? "Still thinking. The AI is busy, hang on…" : LABEL[state]} {live && <span className="ml-1.5 tabular text-white/40">{mm}</span>}
           </p>
           <Waveform live={state === "speaking" || state === "hearing"} bars={40} className="mx-auto mt-5 h-10 justify-center"
-            color={state === "speaking" ? "bg-signal" : state === "hearing" ? "bg-live" : "bg-white/15"} />
+            color={state === "speaking" ? "bg-viz-1" : state === "hearing" ? "bg-live" : "bg-white/15"} />
         </div>
 
         <div ref={chat} className="mt-4 flex-1 space-y-2 overflow-y-auto px-5 pb-3">
           {lines.map((l, i) => l.who === "action" ? (
-            <p key={i} className="flex items-center justify-center gap-1.5 text-[12px] font-semibold text-live"><Zap size={13} /> {l.text}</p>
+            <p key={i} className="flex items-center justify-center gap-1.5 text-[12.5px] font-medium text-viz-1"><Zap size={13} strokeWidth={2} /> {l.text}</p>
           ) : l.who === "error" ? (
-            <p key={i} className="text-center text-[12px] text-signal">{l.text}</p>
+            <p key={i} className="text-center text-[12.5px] text-[#ff9b8f]">{l.text}</p>
           ) : (
             <div key={i} className={cx("flex", l.who === "agent" ? "justify-start" : "justify-end")}>
-              <p className={cx("max-w-[85%] rounded-2xl px-3.5 py-2 text-[14px] leading-relaxed",
-                l.who === "agent" ? "rounded-bl-md bg-white/10" : "rounded-br-md bg-signal text-ink")}>{l.text}</p>
+              <p className={cx("max-w-[85%] rounded-xl px-3.5 py-2 text-[14px] leading-relaxed",
+                l.who === "agent" ? "rounded-bl-sm bg-white/10" : "rounded-br-sm bg-accent text-white")}>{l.text}</p>
             </div>
           ))}
           {state === "idle" && (
             <p className="px-4 pt-4 text-center text-[13px] leading-relaxed text-white/55">
-              She&apos;ll greet you first. Speak naturally and pause when you&apos;re done — she replies in her own voice. Headphones help.
+              {name} greets you first. Speak naturally and pause when you&apos;re done, and the reply comes in {name}&apos;s own voice. Headphones help.
             </p>
           )}
         </div>
@@ -210,9 +210,9 @@ export function TestCall({ agentId, name, languageLabel, open, onClose }: {
               setText(""); audio.current?.pause(); add({ who: "customer", text: t });
               turn({ text: t });
             }}>
-              <input value={text} onChange={(e) => setText(e.target.value)} placeholder="…or type instead"
-                className="flex-1 rounded-xl bg-white/10 px-3.5 py-2.5 text-[14px] outline-none placeholder:text-white/35 focus:bg-white/15" />
-              <button className="grid w-11 place-items-center rounded-xl bg-white/10 hover:bg-white/20" aria-label="Send"><Send size={16} /></button>
+              <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Or type instead"
+                className="flex-1 rounded-lg bg-white/10 px-3.5 py-2.5 text-[14px] outline-none placeholder:text-white/45 focus:bg-white/15" />
+              <button className="grid w-11 place-items-center rounded-lg bg-white/10 transition-colors hover:bg-white/20" aria-label="Send"><Send size={16} strokeWidth={1.75} /></button>
             </form>
           )}
           <div className="flex items-center justify-center gap-5">
@@ -227,7 +227,7 @@ export function TestCall({ agentId, name, languageLabel, open, onClose }: {
             ) : (
               <button onClick={start} aria-label="Start call" className="grid h-16 w-16 place-items-center rounded-full bg-live hover:brightness-110"><Phone size={24} /></button>
             )}
-            <button onClick={close} className="absolute right-5 top-5 rounded-full px-3 py-1 text-[12px] text-white/50 hover:bg-white/10 hover:text-white">Close</button>
+            <button onClick={close} className="absolute right-5 top-5 rounded-full px-3 py-1 text-[12.5px] text-white/60 transition-colors hover:bg-white/10 hover:text-white">Close</button>
           </div>
         </div>
       </div>

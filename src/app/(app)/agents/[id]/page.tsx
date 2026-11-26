@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import { Card, CardHead, CallBadge, LeadBadge, PageHeader } from "@/components/ui";
+import { ArrowRight, CircleCheck } from "lucide-react";
+import { Card, CardHead, CallBadge, LeadBadge, PageHeader, cx } from "@/components/ui";
 import { Waveform } from "@/components/Waveform";
 import { languageById, templateByKey, voiceById } from "@/lib/catalog";
 import { dayTime, inr, mmss, pct } from "@/lib/format";
@@ -29,59 +30,69 @@ export default async function AgentPage({ params, searchParams }: PageProps<"/ag
   const mine = calls.filter((c) => c.agentId === agent.id);
   const m = metrics(since(mine, 30), agents);
   const tpl = templateByKey(agent.template);
+  const stats: [string, string][] = [
+    ["Calls", String(m.calls)], ["Connect rate", pct(m.connectRate, m.calls > 0)], ["Wins", String(m.outcomes)],
+    ["Average call", mmss(m.avgDurationSec)], ["Spend", inr(m.spend)],
+  ];
 
   return (
     <>
       {hired && (
-        <div className="rise mb-6 flex flex-wrap items-center gap-3 rounded-2xl bg-ink px-5 py-4 text-white">
-          <span className="text-2xl">🎉</span>
-          <p className="text-[14px]"><b>{agent.name} is hired and on duty.</b> Give her a test call first, then add leads — she starts calling within a minute, 9 AM – 9 PM.</p>
-          <Link href="/leads" className="ml-auto rounded-xl bg-signal px-4 py-2 text-[13px] font-semibold text-ink">Add leads →</Link>
+        <div className="rise mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-accent/25 bg-accent-soft px-5 py-4">
+          <CircleCheck size={18} strokeWidth={2} className="shrink-0 text-accent" />
+          <p className="text-[14px] text-ink">
+            <span className="font-semibold">{agent.name} is hired and on duty.</span> Try a test call first, then add leads. Calls start within a minute, between 9 AM and 9 PM.
+          </p>
+          <Link href="/leads" className="ml-auto inline-flex items-center gap-1 rounded-lg bg-ink px-3 py-1.5 text-[13px] font-medium text-white hover:bg-ink-2">
+            Add leads <ArrowRight size={14} strokeWidth={2} />
+          </Link>
         </div>
       )}
 
-      <PageHeader eyebrow={`${tpl.industry} · ${languageById(agent.language).native} · ${voiceById(agent.voiceId, agent.language).name} voice`} title={<>{agent.name} <span className="italic text-ink-3">— {agent.outcome.toLowerCase()}</span></>}>
+      <PageHeader
+        eyebrow={`${tpl.industry}, ${languageById(agent.language).native}, ${voiceById(agent.voiceId, agent.language).name} voice`}
+        title={<>{agent.name}<span className="font-normal text-faint">, goal: {agent.outcome.toLowerCase()}</span></>}
+      >
         <StatusToggle agentId={agent.id} status={agent.status} />
         <TestCallButton agentId={agent.id} name={agent.name} languageLabel={languageById(agent.language).label} autoOpen={Boolean(hired)} />
       </PageHeader>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5 mb-5">
-        {[
-          ["Calls · 30 d", String(m.calls)], ["Connect rate", pct(m.connectRate, m.calls > 0)], [agent.outcome, String(m.outcomes)],
-          ["Avg call", mmss(m.avgDurationSec)], ["Spend · 30 d", inr(m.spend)],
-        ].map(([l, v]) => (
-          <Card key={l} className="p-5">
-            <p className="truncate text-[12.5px] text-muted">{l}</p>
-            <p className="mt-2 font-display text-[38px] leading-none tabular">{v}</p>
-          </Card>
+      {/* gap-px over a line-coloured background draws hairline dividers at every breakpoint */}
+      <div className="elevate mb-6 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-line bg-line sm:grid-cols-5">
+        {stats.map(([l, v], i) => (
+          <div key={l} className={cx("bg-surface p-5", i === stats.length - 1 && "max-sm:col-span-2")}>
+            <p className="truncate text-[13px] text-muted">{l}</p>
+            <p className={cx("mt-1.5 text-[24px] font-semibold leading-none tracking-[-0.03em]", l === "Wins" ? "text-accent" : "text-ink")}>{v}</p>
+          </div>
         ))}
-      </section>
+        <p className="col-span-full bg-surface px-5 py-2.5 text-[12px] text-faint">Last 30 days</p>
+      </div>
 
-      <div className="grid gap-5 xl:grid-cols-[1.35fr_1fr]">
+      <div className="grid gap-6 xl:grid-cols-[1.35fr_1fr]">
         <AgentEditor agent={agent} />
 
-        <div className="space-y-5">
-          <Card className="overflow-hidden">
-            <div className="bg-ink px-5 py-5 text-white">
-              <p className="text-[11px] uppercase tracking-[.14em] text-white/50">How she opens</p>
-              <p className="mt-2 text-[15px] leading-relaxed">{agent.opening.replace("{name}", "Ramesh")}</p>
-              <Waveform live={agent.status === "live"} bars={40} className="mt-4" color="bg-signal" />
-            </div>
+        <div className="space-y-6">
+          <Card className="p-5">
+            <p className="text-[13px] text-muted">How {agent.name} opens the call</p>
+            <p className="mt-2 text-[15px] leading-relaxed text-ink">{agent.opening.replace("{name}", "Ramesh")}</p>
+            <Waveform live={false} bars={40} className="mt-4" color="bg-viz-2" />
           </Card>
 
           <Card>
             <CardHead title="Recent calls" hint={`${mine.length} total`}>
-              <Link href={`/calls?agent=${agent.id}`} className="text-[12.5px] font-semibold text-muted hover:text-ink">All →</Link>
+              <Link href={`/calls?agent=${agent.id}`} className="inline-flex items-center gap-1 text-[13px] font-medium text-muted hover:text-ink">
+                All <ArrowRight size={14} strokeWidth={2} />
+              </Link>
             </CardHead>
-            <ul className="divide-y divide-line">
+            <ul className="divide-y divide-line border-t border-line">
               {mine.slice(0, 8).map((c) => (
                 <li key={c.id}>
-                  <Link href={`/calls?open=${c.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-paper/60">
+                  <Link href={`/calls?open=${c.id}`} className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-paper">
                     <div className="min-w-0 flex-1">
-                      <p className="text-[13.5px] font-medium">{c.name}</p>
-                      <p className="text-xs text-faint">{dayTime(c.startedAt)} · {mmss(c.durationSec)}</p>
+                      <p className="text-[13.5px] font-medium text-ink">{c.name}</p>
+                      <p className="text-[12px] text-faint">{dayTime(c.startedAt)}{c.durationSec ? `, ${mmss(c.durationSec)}` : ""}</p>
                     </div>
-                    {c.outcome ? <span className="rounded-full bg-signal-soft px-2.5 py-1 text-[11px] font-semibold">{c.outcome}</span> : <CallBadge status={c.status} />}
+                    {c.outcome ? <span className="whitespace-nowrap rounded-full bg-accent-soft px-2 py-0.5 text-[11.5px] font-medium text-accent-ink">{c.outcome}</span> : <CallBadge status={c.status} />}
                     <LeadBadge status={c.leadStatus} />
                   </Link>
                 </li>

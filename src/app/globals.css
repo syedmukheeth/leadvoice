@@ -1,58 +1,77 @@
 @import "tailwindcss";
 
-/* LeadVoice design tokens: ink console, cool paper workspace, saffron signal, live green. */
+/*
+  LeadVoice tokens.
+  Neutral: cool zinc greys, near-black ink, white surfaces on a light grey canvas.
+  Accent: one cobalt, used for data, active states, focus and links. Primary buttons are ink.
+  Status colours are reserved for meaning (good / warning / critical / neutral), never decoration.
+  Shape: cards 12px (rounded-xl), controls 8px (rounded-lg), chips and badges full pill.
+*/
 @theme inline {
-  --color-ink: #0f1b26;
-  --color-ink-2: #1b2c3b;
-  --color-ink-3: #2a3e50;
-  --color-paper: #f3f5f2;
+  --color-ink: #111114;
+  --color-ink-2: #2a2a30;
+  --color-ink-3: #46464f;
+  --color-paper: #f7f7f8;
   --color-surface: #ffffff;
-  --color-line: #e2e6e1;
-  --color-line-2: #ccd3cc;
-  --color-muted: #5b6874;
-  --color-faint: #6e7a85;
-  --color-signal: #e89a2c;
-  --color-signal-soft: #fdf1dd;
-  --color-live: #12a46b;
-  --color-live-soft: #def4ea;
-  --color-hot: #d4482f;
-  --color-hot-soft: #fbe4de;
-  --color-warm: #b97000;
-  --color-warm-soft: #fbeed2;
-  --color-cold: #5a6a78;
-  --color-cold-soft: #e8edf1;
-  --color-violet: #5c4b9b;
-  --color-violet-soft: #ece8f7;
+  --color-line: #e7e7ea;
+  --color-line-2: #d3d3d9;
+  --color-muted: #5a5a63;
+  --color-faint: #6c6c76;
 
-  --font-sans: var(--font-onest), var(--font-telugu), var(--font-devanagari), system-ui, sans-serif;
-  --font-display: var(--font-instrument), Georgia, serif;
-  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+  --color-accent: #3350d4;
+  --color-accent-ink: #2a42b8;
+  --color-accent-soft: #eef1fc;
+
+  /* status */
+  --color-live: #15803d;
+  --color-live-soft: #e9f6ee;
+  --color-warm: #a15c00;
+  --color-warm-soft: #fdf4e3;
+  --color-hot: #c2372a;
+  --color-hot-soft: #fdeeec;
+  --color-cold: #5a5a63;
+  --color-cold-soft: #f0f0f2;
+  --color-violet: #5a5a63;
+  --color-violet-soft: #f0f0f2;
+
+  /* chart ramp: one hue, light to dark (validated: monotone, visible steps, light end >= 2:1) */
+  --color-viz-1: #a3b1f0;
+  --color-viz-2: #6f84e4;
+  --color-viz-3: #4a63d6;
+  --color-viz-4: #2a42b8;
+
+  --font-sans: var(--font-geist), var(--font-telugu), var(--font-devanagari), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
 html { background: var(--color-paper); }
-body { color: var(--color-ink); font-family: var(--font-sans); font-feature-settings: "ss01", "cv11"; }
-
-.font-display { font-family: var(--font-display); font-weight: 400; letter-spacing: -0.01em; }
-.tabular { font-variant-numeric: tabular-nums; }
-
-/* subtle grain so large paper areas don't feel flat */
-.grain { position: relative; }
-.grain::before {
-  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .35; mix-blend-mode: multiply;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .05 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+body {
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
 }
 
+/* Headings and big figures: same sans, heavier and tighter. No display serif. */
+.font-display { font-family: var(--font-sans); font-weight: 600; letter-spacing: -0.022em; }
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* Card elevation: hairline border plus a shadow tinted to the canvas, never pure black. */
+.elevate { box-shadow: 0 1px 2px rgb(17 17 20 / .04), 0 0 0 1px rgb(17 17 20 / .02); }
+
+:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; border-radius: 6px; }
+
+/* Motion is kept for real state only: an AI employee speaking, a live call. */
 @keyframes wave { 0%, 100% { transform: scaleY(.25); } 50% { transform: scaleY(1); } }
 .wave-bar { animation: wave 1.1s ease-in-out infinite; transform-origin: center; }
 
-@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-.rise { animation: rise .45s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes rise { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise .3s cubic-bezier(.16, 1, .3, 1) both; }
 
-@keyframes ping-soft { 0% { box-shadow: 0 0 0 0 rgba(18,164,107,.45); } 80%, 100% { box-shadow: 0 0 0 8px rgba(18,164,107,0); } }
-.live-dot { animation: ping-soft 1.8s ease-out infinite; }
+@keyframes ping-soft { 0% { box-shadow: 0 0 0 0 rgb(21 128 61 / .4); } 80%, 100% { box-shadow: 0 0 0 6px rgb(21 128 61 / 0); } }
+.live-dot { animation: ping-soft 2s ease-out infinite; }
 
 @media (prefers-reduced-motion: reduce) {
   .wave-bar, .rise, .live-dot { animation: none !important; }
 }
 
-::selection { background: var(--color-signal-soft); }
+::selection { background: var(--color-accent-soft); }

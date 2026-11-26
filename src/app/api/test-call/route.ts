@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     if (!body.start) {
       if (typeof body.audio === "string" && body.audio) {
         const wav = Buffer.from(body.audio, "base64");
-        if (wav.length > 6_000_000) return Response.json({ error: "That was too long — keep it under a minute." }, { status: 413 });
+        if (wav.length > 6_000_000) return Response.json({ error: "That was too long. Keep it under a minute." }, { status: 413 });
         heard = await timed("stt", transcribe(wav, agent.language));
       } else {
         heard = String(body.text ?? "").slice(0, 500).trim();

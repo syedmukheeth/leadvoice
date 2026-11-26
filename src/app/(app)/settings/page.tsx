@@ -1,7 +1,7 @@
 import { connection } from "next/server";
 import { BadgeCheck, Phone, ShieldCheck } from "lucide-react";
 import { Card, CardHead, PageHeader } from "@/components/ui";
-import { PRICE_PER_MIN } from "@/lib/catalog";
+import { PRICE_PER_MIN, VOICES } from "@/lib/catalog";
 import { inr } from "@/lib/format";
 import { getStore } from "@/lib/store";
 import { ResetSample } from "./ResetSample";
@@ -12,6 +12,15 @@ export const instant = false;
 export const metadata = { title: "Settings" };
 
 const PACKS = [500, 2000, 5000, 10000];
+const voiceNames = (premium: boolean) => [...new Set(VOICES.filter((v) => v.premium === premium).map((v) => v.name.split(" (")[0]))].join(", ");
+
+const RULES: [string, string][] = [
+  ["Calling hours", "9 AM to 9 PM, India time"],
+  ["Retries when unanswered", "After 2 h, then 4 h, up to 3 tries"],
+  ["Same number again", "Never within 10 minutes"],
+  ["Do-not-call requests", "Blocked permanently"],
+  ["Voicemail", "Hang up and retry later"],
+];
 
 export default async function SettingsPage() {
   await connection();
@@ -19,43 +28,45 @@ export default async function SettingsPage() {
   const minutes = Math.floor(workspace.creditsInr / PRICE_PER_MIN.standard);
   return (
     <>
-      <PageHeader eyebrow={workspace.industry} title="Settings" />
-      <div className="grid gap-5 xl:grid-cols-2">
-        <Card id="billing" className="overflow-hidden xl:row-span-2">
-          <div className="bg-ink px-6 pb-6 pt-5 text-white">
-            <p className="text-[11px] uppercase tracking-[.14em] text-white/50">Credits · 1 credit = ₹1, never expire</p>
-            <p className="mt-2 font-display text-[64px] leading-none">{inr(workspace.creditsInr)}</p>
-            <p className="mt-2 text-[13px] text-white/60">≈ {minutes.toLocaleString("en-IN")} minutes of talk time with standard voices</p>
+      <PageHeader eyebrow={workspace.name} title="Settings" />
+      <div className="grid gap-6 xl:grid-cols-2">
+        <Card id="billing" className="xl:row-span-2">
+          <div className="border-b border-line p-6">
+            <p className="text-[13px] text-muted">Credits</p>
+            <p className="mt-1 text-[40px] font-semibold leading-none tracking-[-0.035em] text-ink">{inr(workspace.creditsInr)}</p>
+            <p className="mt-2 text-[13px] text-muted">
+              About {minutes.toLocaleString("en-IN")} minutes of talk with standard voices. 1 credit is ₹1 and credits never expire.
+            </p>
           </div>
           <div className="p-6">
-            <p className="mb-3 text-[13px] font-semibold">Top up</p>
+            <p className="mb-3 text-[14px] font-semibold text-ink">Top up</p>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {PACKS.map((p) => (
-                <button key={p} disabled title="Payments go live in Phase 4 (Razorpay)"
-                  className="rounded-xl border border-line px-3 py-3 text-left opacity-80">
-                  <span className="block font-display text-[26px] leading-none">{inr(p)}</span>
-                  <span className="mt-1 block text-[11.5px] text-faint">~{Math.floor(p / PRICE_PER_MIN.standard)} min</span>
+                <button key={p} disabled title="Payments switch on with billing (Razorpay)"
+                  className="rounded-lg border border-line px-3 py-3 text-left disabled:cursor-not-allowed">
+                  <span className="block text-[18px] font-semibold tracking-[-0.02em] text-ink">{inr(p)}</span>
+                  <span className="mt-0.5 block text-[12px] text-faint">{Math.floor(p / PRICE_PER_MIN.standard).toLocaleString("en-IN")} min</span>
                 </button>
               ))}
             </div>
-            <p className="mt-2 text-[12px] text-faint">UPI, cards and net banking via Razorpay — switching on with billing.</p>
+            <p className="mt-2.5 text-[12.5px] text-faint">UPI, cards and net banking through Razorpay. Top-ups open when billing is switched on.</p>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              {[
-                ["Standard voices", PRICE_PER_MIN.standard, "Kavya, Priya, Ritu, Rahul, Dev"],
-                ["Premium voices", PRICE_PER_MIN.premium, "Shruti, Amit, Rohan"],
-              ].map(([n, p, who]) => (
-                <div key={n as string} className="rounded-xl bg-paper/70 p-4">
-                  <p className="text-[13px] font-semibold">{n}</p>
-                  <p className="mt-1 font-display text-[32px] leading-none">₹{p}<span className="font-sans text-[13px] text-faint"> / min</span></p>
-                  <p className="mt-1 text-[12px] text-faint">{who}</p>
+              {([
+                ["Standard voices", PRICE_PER_MIN.standard, voiceNames(false)],
+                ["Premium voices", PRICE_PER_MIN.premium, voiceNames(true)],
+              ] as const).map(([n, p, who]) => (
+                <div key={n} className="rounded-lg border border-line p-4">
+                  <p className="text-[13px] text-muted">{n}</p>
+                  <p className="mt-1 text-[24px] font-semibold tracking-[-0.03em] text-ink">₹{p}<span className="text-[13px] font-normal tracking-normal text-faint"> per min</span></p>
+                  <p className="mt-1 text-[12px] leading-relaxed text-faint">{who}</p>
                 </div>
               ))}
             </div>
-            <ul className="mt-4 space-y-1.5 text-[12.5px] text-muted">
-              <li>• Billed per second of connected talk time. Unanswered calls are free.</li>
-              <li>• No setup fee, no monthly minimum. Business number ₹599 / month.</li>
-              <li>• Calls pause automatically when credits fall below ₹50 — never a surprise bill.</li>
+            <ul className="mt-5 space-y-2 text-[13px] text-muted">
+              <li>Billed per second of connected talk. Unanswered calls are free.</li>
+              <li>No setup fee and no monthly minimum. A business number is ₹599 a month.</li>
+              <li>Calls pause automatically when credits fall below ₹50, so there is never a surprise bill.</li>
             </ul>
           </div>
         </Card>
@@ -63,33 +74,34 @@ export default async function SettingsPage() {
         <Card>
           <CardHead title="Business number" />
           <div className="px-5 pb-5">
-            <div className="flex items-center gap-4 rounded-xl bg-paper/70 p-4">
-              <span className="grid h-11 w-11 place-items-center rounded-full bg-live-soft text-live"><Phone size={19} /></span>
+            <div className="flex items-center gap-4 rounded-lg border border-line p-4">
+              <span className="grid h-10 w-10 place-items-center rounded-lg bg-live-soft text-live"><Phone size={18} strokeWidth={1.75} /></span>
               <div>
-                <p className="font-mono text-[18px]">{workspace.number?.e164 ?? "No number yet"}</p>
-                <p className="text-[12.5px] text-muted">{workspace.number?.status === "active" ? "Active · inbound + outbound · IVRS-ready" : "Complete KYC to get a number"}</p>
+                <p className="font-mono text-[16px] text-ink">{workspace.number?.e164 ?? "No number yet"}</p>
+                <p className="text-[12.5px] text-muted">{workspace.number?.status === "active" ? "Active for inbound and outbound calls, IVRS ready" : "Complete KYC to get a number"}</p>
               </div>
             </div>
-            <div className="mt-4 grid gap-2 text-[13px] sm:grid-cols-2">
-              <p className="flex items-center gap-2"><BadgeCheck size={16} className="text-live" /> Digital KYC (GST / PAN + address)</p>
-              <p className="flex items-center gap-2"><ShieldCheck size={16} className="text-live" /> DLT-registered caller ID</p>
+            <div className="mt-4 grid gap-2 text-[13px] text-ink-3 sm:grid-cols-2">
+              <p className="flex items-center gap-2"><BadgeCheck size={16} strokeWidth={1.75} className="text-live" /> Digital KYC (GST or PAN, plus address)</p>
+              <p className="flex items-center gap-2"><ShieldCheck size={16} strokeWidth={1.75} className="text-live" /> DLT-registered caller ID</p>
             </div>
           </div>
         </Card>
 
         <Card>
-          <CardHead title="Calling rules" hint="applied to every AI employee" />
-          <ul className="space-y-2.5 px-5 pb-5 text-[13.5px]">
-            <li className="flex justify-between"><span className="text-muted">Calling hours</span><b>9:00 AM – 9:00 PM IST</b></li>
-            <li className="flex justify-between"><span className="text-muted">Retries when unanswered</span><b>after 2 h, then 4 h · max 3 tries</b></li>
-            <li className="flex justify-between"><span className="text-muted">Same number again</span><b>never within 10 min</b></li>
-            <li className="flex justify-between"><span className="text-muted">Do-not-call requests</span><b>blocked forever</b></li>
-            <li className="flex justify-between"><span className="text-muted">Voicemail</span><b>hang up, retry later</b></li>
-          </ul>
+          <CardHead title="Calling rules" hint="Applied to every AI employee" />
+          <dl className="divide-y divide-line border-t border-line text-[13.5px]">
+            {RULES.map(([k, v]) => (
+              <div key={k} className="flex justify-between gap-4 px-5 py-2.5">
+                <dt className="text-muted">{k}</dt>
+                <dd className="text-right font-medium text-ink">{v}</dd>
+              </div>
+            ))}
+          </dl>
         </Card>
 
         <Card className="xl:col-span-2">
-          <CardHead title="Sample data" hint="this workspace runs on sample data until your account is connected" />
+          <CardHead title="Sample data" hint="This workspace runs on sample data until your account is connected" />
           <div className="px-5 pb-5"><ResetSample /></div>
         </Card>
       </div>

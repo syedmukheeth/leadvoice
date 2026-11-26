@@ -18,9 +18,9 @@ export default async function DevelopersPage() {
       <PageHeader eyebrow="API & webhooks" title="Developers" />
       <div className="grid gap-5 xl:grid-cols-[1.2fr_1fr]">
         <Card>
-          <CardHead title="Send a lead" hint="your AI employee calls within a minute" />
+          <CardHead title="Send a lead" hint="Your AI employee calls within a minute" />
           <div className="px-5 pb-5">
-            <pre className="overflow-x-auto rounded-xl bg-ink p-4 font-mono text-[12.5px] leading-relaxed text-white/90">
+            <pre className="overflow-x-auto rounded-lg bg-ink p-4 font-mono text-[12.5px] leading-relaxed text-white/90">
 {`curl -X POST https://<your-domain>/api/v1/leads \\
   -H "Authorization: Bearer lv_live_••••" \\
   -H "Content-Type: application/json" \\
@@ -31,10 +31,10 @@ export default async function DevelopersPage() {
     "agent_id": "${agentId}"
   }'`}
             </pre>
-            <p className="mt-3 text-[13px] text-muted">→ <b className="text-ink">202 Accepted</b>, with the lead id. Invalid or do-not-call numbers are rejected with a reason.</p>
+            <p className="mt-3 text-[13px] text-muted">Returns <span className="font-medium text-ink">202 Accepted</span> with the lead id. Invalid or do-not-call numbers are rejected with a reason.</p>
 
-            <p className="mt-6 mb-2 text-[13px] font-semibold">Outcome webhook (we POST this after every call)</p>
-            <pre className="overflow-x-auto rounded-xl bg-paper p-4 font-mono text-[12px] leading-relaxed text-ink-3">
+            <p className="mt-6 mb-2 text-[13px] font-semibold text-ink">Outcome webhook, sent after every call</p>
+            <pre className="overflow-x-auto rounded-lg border border-line bg-paper p-4 font-mono text-[12px] leading-relaxed text-ink-3">
 {`{
   "event": "call.completed",
   "call_id": "cl_8f3a…",
@@ -58,17 +58,17 @@ export default async function DevelopersPage() {
               {workspace.apiKeys.map((k) => (
                 <li key={k.id} className="flex items-center gap-3 px-5 py-3">
                   <div>
-                    <p className="text-[13.5px] font-medium">{k.label}</p>
+                    <p className="text-[13.5px] font-medium text-ink">{k.label}</p>
                     <p className="font-mono text-[12px] text-faint">{k.prefix}••••••••</p>
                   </div>
-                  <span className="ml-auto text-[12px] text-faint">{k.lastUsedAt ? `used ${ago(k.lastUsedAt)}` : "never used"}</span>
+                  <span className="ml-auto text-[12px] text-faint">{k.lastUsedAt ? `Used ${ago(k.lastUsedAt)}` : "Never used"}</span>
                 </li>
               ))}
             </ul>
             <div className="p-5"><KeyMaker /></div>
           </Card>
           <Card>
-            <CardHead title="Webhook URL" hint="where outcomes are sent" />
+            <CardHead title="Webhook URL" hint="Where outcomes are sent" />
             <div className="px-5 pb-5"><WebhookForm current={workspace.webhookUrl ?? ""} /></div>
           </Card>
         </div>

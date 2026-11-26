@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { MobileNav, Sidebar } from "@/components/Sidebar";
+import { Logo, MobileNav, Sidebar } from "@/components/Sidebar";
 import { getStore } from "@/lib/store";
 
 // Every page here shows live workspace data, so pages render on request (with loading.tsx
@@ -13,24 +13,26 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   return (
     <div className="min-h-screen">
       <Sidebar workspace={store.workspace.name} credits={store.workspace.creditsInr} onDuty={onDuty} />
-      <div className="lg:pl-[252px]">
-        <header className="sticky top-0 z-20 border-b border-line bg-paper/85 backdrop-blur">
-          <div className="mx-auto flex max-w-[1240px] items-center gap-3 px-5 py-3 lg:px-10">
-            <span className="lg:hidden font-semibold">Lead<span className="font-display italic text-signal text-lg">Voice</span></span>
-            <p className="hidden lg:block text-[13px] text-muted">
-              Calls go out <b className="font-semibold text-ink">9 AM – 9 PM</b> · India time
+      <div className="lg:pl-[240px]">
+        <header className="sticky top-0 z-20 border-b border-line bg-paper/80 backdrop-blur-md">
+          <div className="mx-auto flex h-14 max-w-[1200px] items-center gap-3 px-5 lg:px-10">
+            <Link href="/dashboard" className="lg:hidden"><Logo /></Link>
+            <p className="hidden text-[13px] text-muted lg:block">
+              Calls go out <span className="font-medium text-ink">9 AM to 9 PM</span>, India time
             </p>
             <Link
               href="/agents/new"
               aria-label="New AI employee"
-              className="ml-auto inline-flex items-center gap-1.5 rounded-xl bg-signal px-3 py-2 text-[13px] font-semibold text-ink hover:brightness-105 sm:px-3.5"
+              className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-ink px-3 py-1.5 text-[13px] font-medium text-white transition-[background-color,transform] duration-150 hover:bg-ink-2 active:scale-[0.98]"
             >
-              <Plus size={15} strokeWidth={2.6} /> <span className="hidden sm:inline">New AI employee</span><span className="sm:hidden">New</span>
+              <Plus size={15} strokeWidth={2} />
+              <span className="hidden sm:inline">New AI employee</span>
+              <span className="sm:hidden">New</span>
             </Link>
           </div>
           <MobileNav />
         </header>
-        <main className="mx-auto max-w-[1240px] px-5 py-9 lg:px-10">{children}</main>
+        <main className="mx-auto max-w-[1200px] px-5 py-8 lg:px-10 lg:py-10">{children}</main>
       </div>
     </div>
   );

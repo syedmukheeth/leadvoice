@@ -1,73 +1,53 @@
-import { pct, shortDay } from "@/lib/format";
+import { pct } from "@/lib/format";
 
-export function TrendChart({ data }: { data: { date: string; calls: number; connected: number; outcomes: number }[] }) {
-  const W = 640, H = 220, pl = 30, pr = 8, pt = 12, pb = 28;
-  const max = Math.max(4, ...data.map((d) => d.calls));
-  const cw = (W - pl - pr) / data.length;
-  const y = (v: number) => pt + (H - pt - pb) * (1 - v / max);
-  const line = data.map((d, i) => `${i ? "L" : "M"}${pl + cw * i + cw / 2},${y(d.outcomes)}`).join(" ");
-  const ticks = [0, 0.5, 1].map((f) => Math.round(max * f));
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Calls, connected calls and outcomes per day">
-      {ticks.map((t) => (
-        <g key={t}>
-          <line x1={pl} x2={W - pr} y1={y(t)} y2={y(t)} stroke="#e2e6e1" strokeDasharray={t ? "3 4" : undefined} />
-          <text x={pl - 8} y={y(t) + 4} fontSize="10" fill="#6e7a85" textAnchor="end">{t}</text>
-        </g>
-      ))}
-      {data.map((d, i) => {
-        const x = pl + cw * i + cw * 0.18, w = cw * 0.64;
-        return (
-          <g key={d.date}>
-            <rect x={x} y={y(d.calls)} width={w} height={H - pb - y(d.calls)} rx="4" fill="#dfe5de">
-              <title>{`${shortDay(d.date)}: ${d.calls} calls`}</title>
-            </rect>
-            <rect x={x} y={y(d.connected)} width={w} height={H - pb - y(d.connected)} rx="4" fill="#1b2c3b">
-              <title>{`${d.connected} connected`}</title>
-            </rect>
-            {i % 2 === 0 && <text x={x + w / 2} y={H - 9} fontSize="10" fill="#6e7a85" textAnchor="middle">{shortDay(d.date)}</text>}
-          </g>
-        );
-      })}
-      <path d={line} fill="none" stroke="#e89a2c" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-      {data.map((d, i) => (
-        <circle key={d.date} cx={pl + cw * i + cw / 2} cy={y(d.outcomes)} r="3.5" fill="#fff" stroke="#e89a2c" strokeWidth="2">
-          <title>{`${d.outcomes} outcomes`}</title>
-        </circle>
-      ))}
-    </svg>
-  );
-}
+export { TrendChart, TrendLegend } from "./TrendChart";
 
+const RAMP = ["var(--color-viz-1)", "var(--color-viz-2)", "var(--color-viz-3)", "var(--color-viz-4)"];
+
+// Funnel: ordered steps, so an ordinal ramp (light to dark) and no background track.
+// Each bar is a real share of the first step; the value sits at the tip, conversion beside it.
 export function Funnel({ steps }: { steps: { label: string; value: number }[] }) {
   const top = Math.max(1, steps[0]?.value ?? 1);
   return (
-    <div className="space-y-2.5">
-      {steps.map((s, i) => (
-        <div key={s.label} className="grid grid-cols-[120px_1fr_70px] items-center gap-3 text-[13px]">
-          <span className="text-muted">{s.label}</span>
-          <div className="h-7 rounded-lg bg-paper overflow-hidden">
+    <ol className="space-y-3.5">
+      {steps.map((s, i) => {
+        const share = s.value / top;
+        const conv = i > 0 ? s.value / Math.max(1, steps[i - 1].value) : null;
+        return (
+          <li key={s.label}>
+            <div className="mb-1.5 flex items-baseline justify-between gap-3 text-[13px]">
+              <span className="text-muted">{s.label}</span>
+              <span className="flex items-baseline gap-2">
+                {conv !== null && <span className="text-[12px] text-faint">{pct(conv)} of previous</span>}
+                <span className="tabular font-semibold text-ink">{s.value}</span>
+              </span>
+            </div>
             <div
-              className={i === steps.length - 1 ? "h-full rounded-lg bg-signal" : "h-full rounded-lg bg-ink-2"}
-              style={{ width: `${Math.max(2, (100 * s.value) / top)}%`, opacity: 1 - i * 0.14 }}
+              className="h-2 rounded-r-[4px]"
+              style={{ width: `${Math.max(1.5, share * 100)}%`, background: RAMP[Math.min(i, RAMP.length - 1)] }}
+              role="img"
+              aria-label={`${s.label}: ${s.value}`}
             />
-          </div>
-          <span className="text-right tabular">
-            <b className="font-semibold">{s.value}</b>
-            {i > 0 && <span className="ml-1 text-faint text-[11px]">{pct(s.value / Math.max(1, steps[i - 1].value))}</span>}
-          </span>
-        </div>
-      ))}
-    </div>
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 
-export function Spark({ values, className }: { values: number[]; className?: string }) {
-  const W = 120, H = 34, max = Math.max(1, ...values);
-  const pts = values.map((v, i) => `${(W * i) / Math.max(1, values.length - 1)},${H - 3 - ((H - 6) * v) / max}`).join(" ");
+// Stat-tile trend: previous period in a quiet grey, current period in the accent, end dot on today.
+export function Spark({ values, split, className }: { values: number[]; split?: number; className?: string }) {
+  const W = 120, H = 32, pad = 4;
+  const max = Math.max(1e-9, ...values);
+  const pts = values.map((v, i) => [pad + ((W - pad * 2) * i) / Math.max(1, values.length - 1), H - pad - ((H - pad * 2) * v) / max] as const);
+  const cut = split ?? Math.floor(values.length / 2);
+  const toPath = (p: readonly (readonly [number, number])[]) => p.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`).join("");
+  const last = pts[pts.length - 1];
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className={className} aria-hidden>
-      <polyline points={pts} fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+      <path d={toPath(pts.slice(0, cut + 1))} fill="none" stroke="var(--color-line-2)" strokeWidth="1.75" strokeLinejoin="round" strokeLinecap="round" />
+      <path d={toPath(pts.slice(cut))} fill="none" stroke="var(--color-accent)" strokeWidth="1.75" strokeLinejoin="round" strokeLinecap="round" />
+      {last && <circle cx={last[0]} cy={last[1]} r="3" fill="var(--color-accent)" stroke="var(--color-surface)" strokeWidth="2" />}
     </svg>
   );
 }

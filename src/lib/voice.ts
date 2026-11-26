@@ -25,7 +25,7 @@ export async function transcribe(wav: Buffer, language: Language): Promise<strin
   const res = await fetch("https://api.sarvam.ai/speech-to-text", {
     method: "POST", headers: { "api-subscription-key": sarvamKey() }, body: form, signal: AbortSignal.timeout(20000),
   }).catch(() => null);
-  if (!res?.ok) throw new VoiceError("Couldn't hear that clearly — please say it again.");
+  if (!res?.ok) throw new VoiceError("Couldn't hear that clearly. Please say it again.");
   const data = await res.json();
   return String(data?.transcript ?? "").trim();
 }
@@ -60,7 +60,7 @@ ${agent.script}
 
 KNOWLEDGE:
 ${agent.knowledge}
-${names.length && agent.language !== "en" ? `\nNAMES — always write these in English letters, exactly like this: ${names.join(", ")}\n` : ""}
+${names.length && agent.language !== "en" ? `\nNAMES: always write these in English letters, exactly like this: ${names.join(", ")}\n` : ""}
 A successful call ends with: ${agent.outcome}.
 Reply as JSON: {"reply": what you say next, "action": short English label if you just completed an action such as "${agent.outcome}" or "Callback booked · Thu 6 PM" (else ""), "end": true only after saying goodbye}.`;
 }

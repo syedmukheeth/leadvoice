@@ -26,5 +26,5 @@ export async function POST(request: Request) {
     if (k) k.lastUsedAt = new Date().toISOString();
   });
   if (!result.added) return Response.json({ error: "No valid new numbers (invalid Indian mobile or already a lead)", ...result }, { status: 422 });
-  return Response.json({ accepted: result.added, skipped: result.skipped, agent_id: agentId, calling: "within a minute, 9 AM – 9 PM IST" }, { status: 202 });
+  return Response.json({ accepted: result.added, skipped: result.skipped, agent_id: agentId, calling: "within a minute, 9 AM to 9 PM IST" }, { status: 202 });
 }
