@@ -44,6 +44,7 @@ export function TestCall({ agentId, name, languageLabel, open, onClose }: {
 }) {
   const [state, setState] = useState<State>("idle");
   const [lines, setLines] = useState<Line[]>([]);
+  const [setup, setSetup] = useState<string | null>(null); // a missing-key problem: stop the call, show it once
   const [muted, setMuted] = useState(false);
   const [text, setText] = useState("");
   const [seconds, setSeconds] = useState(0);
@@ -58,7 +59,8 @@ export function TestCall({ agentId, name, languageLabel, open, onClose }: {
   const chat = useRef<HTMLDivElement>(null);
 
   const set = (s: State) => { st.current = s; setState(s); };
-  const add = (l: Line) => setLines((x) => [...x, l]);
+  // Same error twice in a row is shown once, so a retry loop never floods the screen.
+  const add = (l: Line) => setLines((x) => (l.who === "error" && x.at(-1)?.who === "error" && x.at(-1)?.text === l.text ? x : [...x, l]));
 
   useEffect(() => { mutedRef.current = muted; }, [muted]);
   useEffect(() => { // explain long waits instead of looking frozen
@@ -81,6 +83,7 @@ export function TestCall({ agentId, name, languageLabel, open, onClose }: {
         body: JSON.stringify({ agentId, history: history.current, ...payload }),
       });
       const d = await res.json();
+      if (!res.ok && d.setup) { setSetup(d.error); hangUp(); return; }
       if (!res.ok) throw new Error(d.error ?? "No answer");
       if (payload.audio || payload.text) {
         if (!d.heard) { set("listening"); add({ who: "error", text: "Didn't catch that. Please say it again." }); return; }
@@ -107,7 +110,14 @@ export function TestCall({ agentId, name, languageLabel, open, onClose }: {
   }
 
   async function start() {
-    setLines([]); history.current = []; setSeconds(0); set("connecting");
+    setLines([]); setSetup(null); history.current = []; setSeconds(0); set("connecting");
+    // Check the server can actually run a call before asking for the microphone.
+    const ready = await fetch("/api/test-call").then((r) => r.json()).catch(() => null);
+    if (ready && ready.ready === false) {
+      setSetup(`Calls aren't switched on here yet: ${ready.missing.join(" and ")} ${ready.missing.length > 1 ? "are" : "is"} missing.`);
+      set("ended");
+      return;
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
       const ctx = new AudioContext();
@@ -195,7 +205,14 @@ export function TestCall({ agentId, name, languageLabel, open, onClose }: {
                 l.who === "agent" ? "rounded-bl-sm bg-white/10" : "rounded-br-sm bg-accent text-white")}>{l.text}</p>
             </div>
           ))}
-          {state === "idle" && (
+          {setup && (
+            <div role="alert" className="mx-2 mt-2 rounded-xl border border-white/10 bg-white/5 p-4 text-center">
+              <p className="text-[14px] font-medium text-white">This AI employee can&apos;t take calls yet</p>
+              <p className="mt-1.5 text-[12.5px] leading-relaxed text-white/60">{setup}</p>
+              <p className="mt-1.5 text-[12.5px] leading-relaxed text-white/60">Add the missing keys in Vercel (Settings, Environment Variables), then redeploy.</p>
+            </div>
+          )}
+          {state === "idle" && !setup && (
             <p className="px-4 pt-4 text-center text-[13px] leading-relaxed text-white/55">
               {name} greets you first. Speak naturally and pause when you&apos;re done, and the reply comes in {name}&apos;s own voice. Headphones help.
             </p>

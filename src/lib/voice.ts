@@ -8,11 +8,23 @@ import type { Agent, Language } from "./types";
 
 const LANG_CODE: Record<Language, string> = { te: "te-IN", hi: "hi-IN", en: "en-IN" };
 
-export class VoiceError extends Error {}
+// `setup` marks errors only an admin can fix (missing or rejected keys): the call stops instead of retrying.
+export class VoiceError extends Error {
+  setup: boolean;
+  constructor(message: string, setup = false) {
+    super(message);
+    this.setup = setup;
+  }
+}
+
+// Which keys this server is missing for browser calls (names only, never values).
+export function missingVoiceKeys(): string[] {
+  return ["GOOGLE_API_KEY", "SARVAM_API_KEY"].filter((k) => !setting(k));
+}
 
 function sarvamKey() {
   const key = setting("SARVAM_API_KEY");
-  if (!key) throw new VoiceError("Add SARVAM_API_KEY to talk to your AI employee.");
+  if (!key) throw new VoiceError("Add SARVAM_API_KEY to talk to your AI employee.", true);
   return key;
 }
 
@@ -80,7 +92,7 @@ const cooldown = createCooldown();
 
 export async function agentReply(agent: Agent, business: string, history: Turn[], opening: boolean): Promise<Reply> {
   const key = setting("GOOGLE_API_KEY");
-  if (!key) throw new VoiceError("Add GOOGLE_API_KEY so your AI employee can think.");
+  if (!key) throw new VoiceError("Add GOOGLE_API_KEY so your AI employee can think.", true);
   const contents = history.slice(-20).map((t) => ({ role: t.who === "agent" ? "model" : "user", parts: [{ text: t.text }] }));
   if (opening) {
     contents.push({ role: "user", parts: [{ text: `(The customer just picked up. Start the call with this opening, adapted naturally: "${agent.opening.replace("{name}", "")}")` }] });
@@ -110,7 +122,7 @@ export async function agentReply(agent: Agent, business: string, history: Turn[]
       const err = await res.json().catch(() => null);
       const reason = JSON.stringify(err?.error ?? "");
       if (/API_KEY|API key|PERMISSION_DENIED|unregistered callers/i.test(reason)) {
-        throw new VoiceError("Gemini rejected the API key. Check GOOGLE_API_KEY in your .env file.");
+        throw new VoiceError("Gemini rejected the API key. Check GOOGLE_API_KEY.", true);
       }
       continue; // this model can't take the request (e.g. not available on this key): try the next
     }

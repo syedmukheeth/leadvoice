@@ -1,10 +1,17 @@
-import { agentReply, speak, transcribe, VoiceError, type Turn } from "@/lib/voice";
+import { agentReply, missingVoiceKeys, speak, transcribe, VoiceError, type Turn } from "@/lib/voice";
 import { getStore } from "@/lib/store";
 import { lockedResponse, unlockedRequest } from "@/lib/gate-server";
 
 // POST /api/test-call
 // { agentId, history: Turn[], start?: true, text?: string, audio?: base64 16 kHz WAV }
 // -> { heard, reply, audio (base64 mp3), action, end }
+// GET /api/test-call -> { ready, missing: [key names] } so the call screen can check before opening the mic.
+export async function GET() {
+  if (!(await unlockedRequest())) return lockedResponse();
+  const missing = missingVoiceKeys();
+  return Response.json({ ready: missing.length === 0, missing });
+}
+
 export async function POST(request: Request) {
   if (!(await unlockedRequest())) return lockedResponse();
   const body = await request.json().catch(() => null);
@@ -45,6 +52,7 @@ export async function POST(request: Request) {
     );
   } catch (e) {
     const msg = e instanceof VoiceError ? e.message : "Something went wrong on the call.";
-    return Response.json({ error: msg }, { status: 502 });
+    const setup = e instanceof VoiceError && e.setup;
+    return Response.json({ error: msg, setup }, { status: setup ? 503 : 502 });
   }
 }
