@@ -3,6 +3,7 @@ import { connection, type NextRequest } from "next/server";
 import path from "path";
 import { VOICE_MODEL, VOICES } from "@/lib/catalog";
 import { setting } from "@/lib/env";
+import { dataDir } from "@/lib/paths";
 
 // What each voice says in its sample, written the way people really talk on the phone.
 const SAMPLES: Record<string, string> = {
@@ -13,13 +14,13 @@ const SAMPLES: Record<string, string> = {
 const LANG_CODE: Record<string, string> = { te: "te-IN", hi: "hi-IN", en: "en-IN" };
 
 // GET /api/voices/preview?voice=<speaker id> -> mp3 sample in that voice's language.
-// Cached on disk, so each sample is generated only once.
+// Cached on disk (see paths.ts), so each sample is generated only once per server.
 export async function GET(request: NextRequest) {
   await connection(); // depends on the query string: never prerender
   const voice = VOICES.find((v) => v.id === request.nextUrl.searchParams.get("voice"));
   if (!voice) return new Response("Unknown voice", { status: 400 });
 
-  const file = path.join(process.cwd(), ".data", "voices", `${voice.id}.mp3`);
+  const file = path.join(dataDir(), "voices", `${voice.id}.mp3`);
   const headers = { "Content-Type": "audio/mpeg", "Cache-Control": "public, max-age=86400" };
   try {
     return new Response(new Uint8Array(await fs.readFile(file)), { headers });
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest) {
   const b64: string | undefined = (await res.json())?.audios?.[0];
   if (!b64) return new Response("No audio", { status: 502 });
   const audio = Buffer.from(b64, "base64");
-  await fs.mkdir(path.dirname(file), { recursive: true });
-  await fs.writeFile(file, audio);
+  // Caching is a nice-to-have: a read-only disk must not stop the sample from playing.
+  await fs.mkdir(path.dirname(file), { recursive: true }).then(() => fs.writeFile(file, audio)).catch(() => {});
   return new Response(new Uint8Array(audio), { headers });
 }

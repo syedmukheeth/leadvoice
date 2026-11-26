@@ -1,0 +1,5 @@
+# Local-only files: never upload them with `vercel deploy`.
+.data
+.env*
+!.env.example
+*.tsbuildinfo

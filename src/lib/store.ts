@@ -1,20 +1,22 @@
 // Data access. Until Supabase is connected (NEXT_PUBLIC_SUPABASE_URL), the app runs on a
-// local workspace saved in .data/store.json, seeded with sample data. Swap the body of these
-// functions for Supabase queries in Phase 1b; pages and actions only call these.
+// local workspace saved in store.json (see paths.ts), seeded with sample data. Swap the body of
+// these functions for Supabase queries in Phase 1b; pages and actions only call these.
 import { promises as fs } from "fs";
 import path from "path";
 import { buildDemoStore } from "./demo";
+import { dataDir } from "./paths";
 import type { Agent, Call, Lead, Store } from "./types";
 
-const FILE = path.join(process.cwd(), ".data", "store.json");
+const FILE = path.join(dataDir(), "store.json");
 let cache: Store | null = null;
 let cachedMtime = 0;
+let memoryOnly = false; // set when the disk can't be written: keep the workspace in memory
 
 // Re-reads the file when it changed on disk (edited by hand or by another process), so an
 // outside edit is picked up instead of being overwritten by the next save.
 export async function getStore(): Promise<Store> {
   const mtime = await fs.stat(FILE).then((s) => s.mtimeMs, () => 0);
-  if (cache && mtime === cachedMtime) return cache;
+  if (cache && (memoryOnly || mtime === cachedMtime)) return cache;
   if (!mtime) {
     // No workspace yet: start with sample data.
     cache = buildDemoStore();
@@ -32,9 +34,15 @@ export async function getStore(): Promise<Store> {
 }
 
 async function persist() {
-  await fs.mkdir(path.dirname(FILE), { recursive: true });
-  await fs.writeFile(FILE, JSON.stringify(cache, null, 1), "utf8");
-  cachedMtime = (await fs.stat(FILE)).mtimeMs;
+  try {
+    await fs.mkdir(path.dirname(FILE), { recursive: true });
+    await fs.writeFile(FILE, JSON.stringify(cache, null, 1), "utf8");
+    cachedMtime = (await fs.stat(FILE)).mtimeMs;
+  } catch (e) {
+    // Read-only disk: carry on from memory instead of failing every page.
+    if (!memoryOnly) console.warn(`[store] can't write ${FILE}, keeping the workspace in memory:`, (e as Error).message);
+    memoryOnly = true;
+  }
 }
 
 export async function mutate(fn: (s: Store) => void) {
