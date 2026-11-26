@@ -86,8 +86,11 @@ A successful call ends with: ${agent.outcome}.
 Reply as JSON: {"reply": what you say next, "action": short English label ONLY in the one reply where an action is truly finished with its details agreed (for example "${agent.outcome}" once the day and time are confirmed, or "Callback booked · Thu 6 PM" once the customer gave a time); otherwise "" and never repeat an action already reported, "end": true only after saying goodbye}.`;
 }
 
-// Stronger Flash models first (they keep names and script right); Lite models are the backup.
-const MODELS = ["gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"];
+// Fast Lite models first: they answer in about 2 s and keep names right thanks to the NAMES list.
+// The bigger Flash models are often overloaded on the free tier (8 s timeouts), so they are the backup.
+const MODELS = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.8-flash"];
+const PER_MODEL_MS = 6000;
+const TOTAL_BUDGET_MS = 16000; // stop trying more models after this: a caller won't wait longer
 const cooldown = createCooldown();
 
 export async function agentReply(agent: Agent, business: string, history: Turn[], opening: boolean): Promise<Reply> {
@@ -100,7 +103,9 @@ export async function agentReply(agent: Agent, business: string, history: Turn[]
   const models = cooldown.order(
     [setting("LLM_TEST_MODEL"), ...MODELS].filter((m, i, a): m is string => !!m && a.indexOf(m) === i),
   );
+  const begun = Date.now();
   for (const model of models) {
+    if (Date.now() - begun > TOTAL_BUDGET_MS) break;
     const started = Date.now();
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
       method: "POST",
@@ -110,7 +115,7 @@ export async function agentReply(agent: Agent, business: string, history: Turn[]
         contents,
         generationConfig: { responseMimeType: "application/json", thinkingConfig: { thinkingLevel: "low" } },
       }),
-      signal: AbortSignal.timeout(8000), // a busy model is skipped quickly; the next one answers
+      signal: AbortSignal.timeout(PER_MODEL_MS), // a busy model is skipped quickly; the next one answers
     }).catch(() => null);
     console.info(`[voice] ${model}: ${res ? res.status : "timeout"} in ${((Date.now() - started) / 1000).toFixed(1)}s`);
     // Busy, slow or out of free quota: rest this model for a while and try the next one.

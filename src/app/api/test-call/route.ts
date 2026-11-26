@@ -1,10 +1,14 @@
 import { agentReply, missingVoiceKeys, speak, transcribe, VoiceError, type Turn } from "@/lib/voice";
 import { getStore } from "@/lib/store";
+import { openingLine } from "@/lib/opening";
 import { lockedResponse, unlockedRequest } from "@/lib/gate-server";
 
 // POST /api/test-call
 // { agentId, history: Turn[], start?: true, text?: string, audio?: base64 16 kHz WAV }
 // -> { heard, reply, audio (base64 mp3), action, end }
+// A turn is speech-to-text + AI + voice: give it room, but the AI loop caps itself at ~16 s.
+export const maxDuration = 60;
+
 // GET /api/test-call -> { ready, missing: [key names] } so the call screen can check before opening the mic.
 export async function GET() {
   if (!(await unlockedRequest())) return lockedResponse();
@@ -44,7 +48,10 @@ export async function POST(request: Request) {
       if (!heard) return Response.json({ heard: "", reply: "", audio: "", end: false });
       history.push({ who: "customer", text: heard });
     }
-    const r = await timed("llm", agentReply(agent, workspace.name, history, Boolean(body.start)));
+    // The greeting is the employee's written opening, spoken at once; the AI takes over from the first reply.
+    const r = body.start
+      ? { reply: openingLine(agent.opening), action: undefined, end: false }
+      : await timed("llm", agentReply(agent, workspace.name, history, false));
     const audio = await timed("tts", speak(r.reply, agent.voiceId, agent.language));
     return Response.json(
       { heard, reply: r.reply, audio, action: r.action, end: r.end },

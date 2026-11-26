@@ -81,6 +81,7 @@ export function TestCall({ agentId, name, languageLabel, open, onClose }: {
       const res = await fetch("/api/test-call", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ agentId, history: history.current, ...payload }),
+        signal: AbortSignal.timeout(40000),
       });
       const d = await res.json();
       if (!res.ok && d.setup) { setSetup(d.error); hangUp(); return; }
@@ -104,7 +105,9 @@ export function TestCall({ agentId, name, languageLabel, open, onClose }: {
         a.play().catch(after);
       } else after();
     } catch (e) {
-      add({ who: "error", text: e instanceof Error ? e.message : "Something went wrong" });
+      // A dropped or timed-out connection: keep the call going and ask again, in plain words.
+      const network = e instanceof TypeError || (e instanceof DOMException && (e.name === "TimeoutError" || e.name === "AbortError"));
+      add({ who: "error", text: network ? "The connection dropped. Please say that again." : e instanceof Error ? e.message : "Something went wrong" });
       set("listening");
     }
   }
