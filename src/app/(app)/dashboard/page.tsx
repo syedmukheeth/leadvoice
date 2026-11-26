@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowDownRight, ArrowRight, ArrowUpRight, Minus } from "lucide-react";
+import { ArrowDownRight, ArrowRight, ArrowUpRight, Headset, Minus } from "lucide-react";
 import { connection } from "next/server";
 import { Funnel, Spark, TrendChart, TrendLegend } from "@/components/charts";
 import { Card, CardHead, LeadBadge, PageHeader, Tag, cx } from "@/components/ui";
@@ -74,6 +74,9 @@ export default async function Dashboard() {
       <PageHeader eyebrow={`${greet}. Here is how the last 7 days went.`} title={`${pluralOutcome(mainOutcome, mainWins)} this week`}>
         <Link href="/calls" className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[13px] font-medium text-muted transition-colors hover:bg-cold-soft hover:text-ink">
           All calls <ArrowRight size={14} strokeWidth={2} />
+        </Link>
+        <Link href="/talk" className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-accent-ink">
+          <Headset size={15} strokeWidth={2} /> Talk to AI
         </Link>
       </PageHeader>
 

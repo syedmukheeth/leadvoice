@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AudioLines, Bot, Code2, LayoutGrid, PhoneCall, Settings, Users } from "lucide-react";
+import { AudioLines, Bot, Code2, Headset, LayoutGrid, PhoneCall, Settings, Users } from "lucide-react";
 import { cx } from "./ui";
 
 const NAV = [
   { href: "/dashboard", label: "Overview", icon: LayoutGrid },
+  { href: "/talk", label: "Talk to AI", icon: Headset },
   { href: "/agents", label: "AI employees", icon: Bot },
   { href: "/calls", label: "Calls", icon: PhoneCall },
   { href: "/leads", label: "Leads", icon: Users },
