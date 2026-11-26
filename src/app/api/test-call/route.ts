@@ -1,10 +1,12 @@
 import { agentReply, speak, transcribe, VoiceError, type Turn } from "@/lib/voice";
 import { getStore } from "@/lib/store";
+import { lockedResponse, unlockedRequest } from "@/lib/gate-server";
 
 // POST /api/test-call
 // { agentId, history: Turn[], start?: true, text?: string, audio?: base64 16 kHz WAV }
 // -> { heard, reply, audio (base64 mp3), action, end }
 export async function POST(request: Request) {
+  if (!(await unlockedRequest())) return lockedResponse();
   const body = await request.json().catch(() => null);
   if (!body?.agentId) return Response.json({ error: "Missing agentId" }, { status: 400 });
   const { agents, workspace } = await getStore();

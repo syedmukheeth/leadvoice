@@ -3,12 +3,14 @@
 import { createHash, randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { requireUnlocked } from "./gate-server";
 import { mutate, resetToSample } from "./store";
 import type { Agent, Lead } from "./types";
 
 const id = (p: string) => `${p}_${randomBytes(5).toString("hex")}`;
 
 export async function createAgent(input: Omit<Agent, "id" | "createdAt" | "status">) {
+  await requireUnlocked();
   const agent: Agent = { ...input, id: id("ag"), status: "live", createdAt: new Date().toISOString() };
   await mutate((s) => { s.agents.unshift(agent); });
   revalidatePath("/", "layout");
@@ -16,6 +18,7 @@ export async function createAgent(input: Omit<Agent, "id" | "createdAt" | "statu
 }
 
 export async function updateAgent(agentId: string, patch: Partial<Pick<Agent, "name" | "role" | "opening" | "script" | "knowledge" | "outcome" | "voiceId" | "language" | "actions">>) {
+  await requireUnlocked();
   await mutate((s) => {
     const a = s.agents.find((x) => x.id === agentId);
     if (a) Object.assign(a, patch);
@@ -24,6 +27,7 @@ export async function updateAgent(agentId: string, patch: Partial<Pick<Agent, "n
 }
 
 export async function setAgentStatus(agentId: string, status: Agent["status"]) {
+  await requireUnlocked();
   await mutate((s) => {
     const a = s.agents.find((x) => x.id === agentId);
     if (a) a.status = status;
@@ -40,6 +44,7 @@ function normalisePhone(raw: string): string | null {
 }
 
 export async function addLeads(rows: { name: string; phone: string; source?: string }[], agentId: string) {
+  await requireUnlocked();
   let added = 0, skipped = 0;
   await mutate((s) => {
     const existing = new Set(s.leads.map((l) => l.phone.replace(/\s/g, "")));
@@ -62,6 +67,7 @@ export async function addLeads(rows: { name: string; phone: string; source?: str
 }
 
 export async function createApiKey(label: string) {
+  await requireUnlocked();
   const secret = `lv_live_${randomBytes(18).toString("hex")}`;
   await mutate((s) => {
     s.workspace.apiKeys.unshift({ id: id("key"), label: label.trim().slice(0, 40) || "API key", prefix: secret.slice(0, 12), hash: createHash("sha256").update(secret).digest("hex"), createdAt: new Date().toISOString() });
@@ -71,11 +77,13 @@ export async function createApiKey(label: string) {
 }
 
 export async function saveWebhook(url: string) {
+  await requireUnlocked();
   await mutate((s) => { s.workspace.webhookUrl = url.trim().slice(0, 300) || undefined; });
   revalidatePath("/developers");
 }
 
 export async function resetSampleData() {
+  await requireUnlocked();
   await resetToSample();
   revalidatePath("/", "layout");
 }

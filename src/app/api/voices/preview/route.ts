@@ -4,6 +4,7 @@ import path from "path";
 import { VOICE_MODEL, VOICES } from "@/lib/catalog";
 import { setting } from "@/lib/env";
 import { dataDir } from "@/lib/paths";
+import { lockedResponse, unlockedRequest } from "@/lib/gate-server";
 
 // What each voice says in its sample, written the way people really talk on the phone.
 const SAMPLES: Record<string, string> = {
@@ -16,6 +17,7 @@ const LANG_CODE: Record<string, string> = { te: "te-IN", hi: "hi-IN", en: "en-IN
 // GET /api/voices/preview?voice=<speaker id> -> mp3 sample in that voice's language.
 // Cached on disk (see paths.ts), so each sample is generated only once per server.
 export async function GET(request: NextRequest) {
+  if (!(await unlockedRequest())) return lockedResponse();
   await connection(); // depends on the query string: never prerender
   const voice = VOICES.find((v) => v.id === request.nextUrl.searchParams.get("voice"));
   if (!voice) return new Response("Unknown voice", { status: 400 });

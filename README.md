@@ -37,9 +37,12 @@ npm run build
 
 ```bash
 vercel link --yes --project leadvoice
+vercel env add SITE_PASSWORD production
 vercel env add GOOGLE_API_KEY production
 vercel env add SARVAM_API_KEY production
 vercel deploy --prod
 ```
 
-Without the two keys the site still works on sample data; test calls, AI script writing and voice samples switch on once they are added.
+The deployed site is password protected: it stays locked until `SITE_PASSWORD` is set, and visitors enter it once per device (30 days). The lead API (`/api/v1/leads`) uses its own Bearer keys instead.
+
+Without the two API keys the site still works on sample data; test calls, AI script writing and voice samples switch on once they are added.

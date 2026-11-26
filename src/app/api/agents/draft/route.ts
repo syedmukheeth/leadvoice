@@ -1,8 +1,10 @@
 import { draftAgent } from "@/lib/draft";
 import { getStore } from "@/lib/store";
+import { lockedResponse, unlockedRequest } from "@/lib/gate-server";
 import type { Language } from "@/lib/types";
 
 export async function POST(request: Request) {
+  if (!(await unlockedRequest())) return lockedResponse();
   const body = await request.json().catch(() => ({}));
   const task = String(body.task ?? "").slice(0, 600).trim();
   if (task.length < 10) return Response.json({ error: "Describe the job in one sentence (at least a few words)." }, { status: 400 });
