@@ -87,7 +87,7 @@ export function TestCall({ agentId, name, languageLabel, open, onClose }: {
         if (payload.audio) add({ who: "customer", text: d.heard }); // typed text is already on screen
         history.current.push({ who: "customer", text: d.heard });
       }
-      if (d.action) add({ who: "action", text: d.action });
+      if (d.action) setLines((ls) => (ls.some((x) => x.who === "action" && x.text === d.action) ? ls : [...ls, { who: "action", text: d.action }]));
       if (d.reply) {
         add({ who: "agent", text: d.reply });
         history.current.push({ who: "agent", text: d.reply });
