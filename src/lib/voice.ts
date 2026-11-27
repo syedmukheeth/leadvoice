@@ -5,6 +5,7 @@ import { setting } from "./env";
 import { namesIn } from "./names";
 import { forSpeech } from "./pronounce";
 import { REST_MS, createCooldown } from "./cooldown";
+import { MODELS, hasForeignScript, parseReply, quotaRestMs, requestBody } from "./llm";
 import type { Agent, Language } from "./types";
 
 const LANG_CODE: Record<Language, string> = { te: "te-IN", hi: "hi-IN", en: "en-IN" };
@@ -116,9 +117,6 @@ STRICT: never invent products, prices, places, offers or features. If KNOWLEDGE 
 Reply as JSON: {"reply": what you say next, "action": short English label ONLY in the one reply where an action is truly finished with its details agreed (for example "${agent.outcome}" once the day and time are confirmed, or "Callback booked · Thu 6 PM" once the customer gave a time); otherwise "" and never repeat an action already reported, "end": true only after saying goodbye}.`;
 }
 
-// Fast Lite models first: they answer in about 2 s and keep names right thanks to the NAMES list.
-// The bigger Flash models are often overloaded on the free tier (8 s timeouts), so they are the backup.
-const MODELS = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.8-flash"];
 const PER_MODEL_MS = 6000;
 const TOTAL_BUDGET_MS = 16000; // stop trying more models after this: a caller won't wait longer
 const cooldown = createCooldown();
@@ -133,6 +131,7 @@ export async function agentReply(agent: Agent, business: string, history: Turn[]
   const models = cooldown.order(
     [setting("LLM_TEST_MODEL"), ...MODELS].filter((m, i, a): m is string => !!m && a.indexOf(m) === i),
   );
+  const system = systemPrompt(agent, business);
   const begun = Date.now();
   for (const model of models) {
     if (Date.now() - begun > TOTAL_BUDGET_MS) break;
@@ -140,17 +139,13 @@ export async function agentReply(agent: Agent, business: string, history: Turn[]
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": key },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: systemPrompt(agent, business) }] },
-        contents,
-        generationConfig: { responseMimeType: "application/json", thinkingConfig: { thinkingLevel: "low" } },
-      }),
+      body: JSON.stringify(requestBody(model, system, contents)),
       signal: AbortSignal.timeout(PER_MODEL_MS), // a busy model is skipped quickly; the next one answers
     }).catch(() => null);
     console.info(`[voice] ${model}: ${res ? res.status : "timeout"} in ${((Date.now() - started) / 1000).toFixed(1)}s`);
     // Busy, slow or out of free quota: rest this model for a while and try the next one.
     if (!res) { cooldown.rest(model, REST_MS.timeout); continue; }
-    if (res.status === 429) { cooldown.rest(model, REST_MS.quota); continue; }
+    if (res.status === 429) { cooldown.rest(model, quotaRestMs(await res.json().catch(() => null))); continue; }
     if (res.status >= 500) { cooldown.rest(model, REST_MS.overloaded); continue; }
     if (res.status === 404) { cooldown.rest(model, REST_MS.missing); continue; }
     if (res.status === 400 || res.status === 401 || res.status === 403) {
@@ -164,14 +159,12 @@ export async function agentReply(agent: Agent, business: string, history: Turn[]
     if (!res.ok) continue;
     cooldown.clear(model);
     const data = await res.json();
-    const text: string = data?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? "").join("") ?? "";
-    try {
-      const j = JSON.parse(text);
-      const reply = String(j.reply ?? "").trim();
-      if (reply) return { reply, action: String(j.action ?? "").trim() || undefined, end: Boolean(j.end) };
-    } catch {
-      if (text.trim()) return { reply: text.trim(), end: false };
-    }
+    const text: string = data?.candidates?.[0]?.content?.parts
+      ?.filter((p: { thought?: boolean }) => !p.thought)
+      .map((p: { text?: string }) => p.text ?? "").join("") ?? "";
+    const parsed = parseReply(text);
+    if (parsed && hasForeignScript(parsed.reply)) { console.info(`[voice] ${model}: reply in a foreign script, trying the next model`); continue; }
+    if (parsed) return parsed;
   }
-  throw new VoiceError("All Gemini models are busy or out of free quota right now. Try again in a minute.");
+  throw new VoiceError("Sorry, I'm a little busy right now. Please say that again in a moment.");
 }
