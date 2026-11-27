@@ -1,29 +1,27 @@
 import Link from "next/link";
 import { connection } from "next/server";
-import { Plus } from "lucide-react";
 import { Card, PageHeader, Tag, cx } from "@/components/ui";
 import { Waveform } from "@/components/Waveform";
-import { ACTIONS, languageById, templateByKey, voiceById } from "@/lib/catalog";
-import { inr, pct } from "@/lib/format";
+import { ACTIONS, languageById, voiceById } from "@/lib/catalog";
+import { num, pct } from "@/lib/format";
 import { metrics, since } from "@/lib/metrics";
 import { getStore } from "@/lib/store";
 
 // Live workspace data: render on request (loading.tsx is the instant placeholder).
 export const instant = false;
 
-export const metadata = { title: "AI employees" };
+export const metadata = { title: "AI agents" };
 
 export default async function AgentsPage() {
   await connection();
-  const { agents, calls } = await getStore();
+  const { agents, calls, workspace } = await getStore();
   return (
     <>
-      <PageHeader eyebrow="Numbers cover the last 30 days" title="AI employees" />
+      <PageHeader eyebrow="Numbers cover the last 30 days" title="AI agents" />
 
       <div className="grid gap-5 lg:grid-cols-2">
         {agents.map((a, i) => {
           const m = metrics(since(calls.filter((c) => c.agentId === a.id), 30), agents);
-          const tpl = templateByKey(a.template);
           const live = a.status === "live";
           return (
             <Link key={a.id} href={`/agents/${a.id}`} className="group rounded-xl">
@@ -33,7 +31,7 @@ export default async function AgentsPage() {
                   <div className="min-w-0">
                     <p className="text-[17px] font-semibold tracking-[-0.015em] text-ink">{a.name}</p>
                     <p className="mt-0.5 text-[12.5px] text-faint">
-                      {tpl.industry}, <span className="font-medium">{languageById(a.language).native}</span>, {voiceById(a.voiceId, a.language).name} voice
+                      {workspace.industry}, <span className="font-medium">{languageById(a.language).native}</span>, {voiceById(a.voiceId, a.language).name} voice
                     </p>
                   </div>
                   <span className={cx("ml-auto shrink-0 rounded-full px-2 py-0.5 text-[11.5px] font-medium", live ? "bg-live-soft text-live" : "bg-cold-soft text-cold")}>
@@ -47,7 +45,7 @@ export default async function AgentsPage() {
                 </div>
                 <div className="min-h-5 flex-1" />
                 <dl className="grid grid-cols-4 gap-3 border-t border-line pt-4">
-                  {[["Calls", String(m.calls)], ["Connect", pct(m.connectRate, m.calls > 0)], ["Wins", String(m.outcomes)], ["Spend", inr(m.spend)]].map(([l, v]) => (
+                  {[["Calls", String(m.calls)], ["Connect", pct(m.connectRate, m.calls > 0)], ["Wins", String(m.outcomes)], ["Talk time", `${num(Math.round(m.minutes))} min`]].map(([l, v]) => (
                     <div key={l} className="min-w-0">
                       <dt className="truncate text-[11.5px] text-faint">{l}</dt>
                       <dd className={cx("text-[18px] font-semibold tracking-[-0.02em]", l === "Wins" ? "text-accent" : "text-ink")}>{v}</dd>
@@ -58,16 +56,6 @@ export default async function AgentsPage() {
             </Link>
           );
         })}
-
-        <Link href="/agents/new" className="group rounded-xl">
-          <div className="grid h-full min-h-[240px] place-items-center rounded-xl border border-dashed border-line-2 p-8 text-center transition-colors group-hover:border-accent group-hover:bg-accent-soft/50">
-            <div>
-              <span className="mx-auto grid h-10 w-10 place-items-center rounded-lg bg-ink text-white"><Plus size={18} strokeWidth={2} /></span>
-              <p className="mt-4 text-[15px] font-semibold text-ink">Hire another AI employee</p>
-              <p className="mt-1 text-[13.5px] text-muted">Describe the job in one sentence. Ready in under a minute.</p>
-            </div>
-          </div>
-        </Link>
       </div>
     </>
   );

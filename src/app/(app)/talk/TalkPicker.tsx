@@ -8,7 +8,7 @@ import { cx } from "@/components/ui";
 
 export interface TalkAgent { id: string; name: string; role: string; outcome: string; languageLabel: string; native: string; voice: string; live: boolean }
 
-// Client-demo screen: pick an AI employee and talk to it in the browser, like a real phone call.
+// Client-demo screen: pick an AI agent and talk to it in the browser, like a real phone call.
 export function TalkPicker({ agents }: { agents: TalkAgent[] }) {
   const [open, setOpen] = useState<TalkAgent | null>(null);
   return (

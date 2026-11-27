@@ -4,6 +4,7 @@ import path from "path";
 import { VOICE_MODEL, VOICES } from "@/lib/catalog";
 import { setting } from "@/lib/env";
 import { dataDir } from "@/lib/paths";
+import { forSpeech } from "@/lib/pronounce";
 import { lockedResponse, unlockedRequest } from "@/lib/gate-server";
 
 // What each voice says in its sample, written the way people really talk on the phone.
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
     method: "POST",
     headers: { "api-subscription-key": key, "Content-Type": "application/json" },
     body: JSON.stringify({
-      text: SAMPLES[voice.language], target_language_code: LANG_CODE[voice.language],
+      text: forSpeech(SAMPLES[voice.language], voice.language), target_language_code: LANG_CODE[voice.language],
       speaker: voice.id, model: VOICE_MODEL, output_audio_codec: "mp3",
     }),
     signal: AbortSignal.timeout(20000),

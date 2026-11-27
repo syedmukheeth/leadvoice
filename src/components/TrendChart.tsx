@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { inr, shortDay } from "@/lib/format";
+import { shortDay } from "@/lib/format";
 
 type Day = { date: string; calls: number; connected: number; outcomes: number; spend: number };
 
@@ -103,18 +103,15 @@ export function TrendChart({ data }: { data: Day[] }) {
               <span className="tabular font-medium text-ink">{v}</span>
             </p>
           ))}
-          <p className="mt-1.5 flex justify-between border-t border-line pt-1.5 text-muted">
-            Spend <span className="tabular font-medium text-ink">{inr(hDay.spend)}</span>
-          </p>
         </div>
       )}
 
       <table className="sr-only">
         <caption>Calls per day</caption>
-        <thead><tr><th>Day</th><th>Calls</th><th>Connected</th><th>Won</th><th>Spend</th></tr></thead>
+        <thead><tr><th>Day</th><th>Calls</th><th>Connected</th><th>Won</th></tr></thead>
         <tbody>
           {data.map((d) => (
-            <tr key={d.date}><td>{shortDay(d.date)}</td><td>{d.calls}</td><td>{d.connected}</td><td>{d.outcomes}</td><td>{inr(d.spend)}</td></tr>
+            <tr key={d.date}><td>{shortDay(d.date)}</td><td>{d.calls}</td><td>{d.connected}</td><td>{d.outcomes}</td></tr>
           ))}
         </tbody>
       </table>

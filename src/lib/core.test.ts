@@ -1,17 +1,9 @@
 // Run: npm test
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { LANGUAGES, VOICES, guessTemplate, voiceById, voicesFor } from "./catalog.ts";
+import { LANGUAGES, VOICES, voiceById, voicesFor } from "./catalog.ts";
 import { buildDemoStore } from "./demo.ts";
 import { daily, metrics } from "./metrics.ts";
-
-test("guessTemplate picks the industry from one sentence", () => {
-  assert.equal(guessTemplate("Call plot buyers and book a site visit").key, "real_estate");
-  assert.equal(guessTemplate("Remind loan applicants about EMI and documents").key, "loans");
-  assert.equal(guessTemplate("Confirm every cash on delivery order and address").key, "cod");
-  assert.equal(guessTemplate("Book patient appointments with the doctor").key, "hospital");
-  assert.equal(guessTemplate("Screen candidates for notice period and salary").key, "recruitment");
-});
 
 test("every language has natural voices of both genders", () => {
   for (const l of LANGUAGES) {

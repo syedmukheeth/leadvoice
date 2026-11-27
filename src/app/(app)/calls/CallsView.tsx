@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowDownLeft, ArrowUpRight, Search, X, Zap } from "lucide-react";
 import { Card, CallBadge, LeadBadge, cx } from "@/components/ui";
 import { Waveform } from "@/components/Waveform";
-import { dayTime, inr, maskPhone, mmss } from "@/lib/format";
+import { dayTime, maskPhone, mmss } from "@/lib/format";
 import type { Call, Language } from "@/lib/types";
 
 type AgentLite = { id: string; name: string; outcome: string; language: Language };
@@ -49,7 +49,7 @@ export function CallsView({ calls, agents, initialAgent, initialOpen }: { calls:
           </button>
         ))}
         <select value={agent} onChange={(e) => setAgent(e.target.value)} className="rounded-full border border-line bg-surface px-3.5 py-1.5 text-[13px] text-muted">
-          <option value="">All AI employees</option>
+          <option value="">All AI agents</option>
           {agents.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
         </select>
         <label className="ml-auto flex w-full items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2 focus-within:border-line-2 sm:w-72">
@@ -63,7 +63,7 @@ export function CallsView({ calls, agents, initialAgent, initialOpen }: { calls:
           <table className="w-full min-w-[860px] text-[13.5px]">
             <thead>
               <tr className="border-b border-line bg-paper text-left text-[12px] text-muted">
-                <th className="px-5 py-2.5 font-medium">When</th><th className="px-3 font-medium">Customer</th><th className="px-3 font-medium">AI employee</th>
+                <th className="px-5 py-2.5 font-medium">When</th><th className="px-3 font-medium">Customer</th><th className="px-3 font-medium">AI agent</th>
                 <th className="px-3 font-medium">Result</th><th className="px-3 font-medium">Summary</th><th className="px-5 text-right font-medium">Length</th>
               </tr>
             </thead>
@@ -120,7 +120,7 @@ function Replay({ call, agent, onClose, isWin }: { call: Call; agent?: AgentLite
       <div className="grid grid-cols-3 gap-px border-b border-line bg-line">
         <div className="bg-surface px-5 py-3"><p className="text-[12px] text-faint">Result</p><p className="mt-1 text-[13.5px] font-medium text-ink">{call.outcome ?? (call.status === "connected" ? "—" : "Not reached")}</p></div>
         <div className="bg-surface px-5 py-3"><p className="text-[12px] text-faint">Lead</p><div className="mt-1">{call.leadStatus ? <LeadBadge status={call.leadStatus} /> : "—"}</div></div>
-        <div className="bg-surface px-5 py-3"><p className="text-[12px] text-faint">Cost</p><p className="mt-1 text-[13.5px] font-medium text-ink">{inr(call.costInr, 2)}</p></div>
+        <div className="bg-surface px-5 py-3"><p className="text-[12px] text-faint">Length</p><p className="mt-1 text-[13.5px] font-medium text-ink tabular">{mmss(call.durationSec)}</p></div>
       </div>
 
       {call.summary && (

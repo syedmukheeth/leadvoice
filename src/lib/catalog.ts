@@ -39,54 +39,10 @@ export const ACTIONS: Record<ActionKey, { label: string; hint: string }> = {
   memory: { label: "Caller memory", hint: "Remembers returning callers and past conversations" },
 };
 
-export interface Template {
-  key: string;
-  industry: string;
-  title: string;
-  example: string; // sample one-line task, shown as placeholder
-  outcome: string;
-  direction: "inbound" | "outbound" | "both";
-  actions: ActionKey[];
-  questions: string[]; // what the agent finds out
-}
-
-export const TEMPLATES: Template[] = [
-  { key: "real_estate", industry: "Real estate", title: "Qualify buyers, book site visits", example: "Call every Facebook lead for our Guntur plots, find their budget and book a Sunday site visit.", outcome: "Site visit booked", direction: "both", actions: ["save_lead", "book_visit", "callback", "transfer", "whatsapp", "memory"], questions: ["Own use or investment", "Budget", "Preferred size / facing", "When they plan to buy"] },
-  { key: "loans", industry: "Loans & insurance", title: "Screen eligibility, chase documents", example: "Call loan applicants, check salary and city, and remind them to upload PAN and payslips.", outcome: "Documents promised", direction: "outbound", actions: ["save_lead", "callback", "whatsapp", "webhook"], questions: ["Monthly income", "Employment type", "Loan amount", "Documents ready"] },
-  { key: "coaching", industry: "Coaching & education", title: "Explain batches, book demo classes", example: "Call students who enquired, explain NEET batches and fees, and book a free demo class.", outcome: "Demo class booked", direction: "both", actions: ["save_lead", "book_visit", "callback", "whatsapp"], questions: ["Class / exam", "Preferred batch timing", "Parent decision maker"] },
-  { key: "hospital", industry: "Hospitals & clinics", title: "Answer patients, book appointments", example: "Answer calls to our clinic, tell timings and doctor availability, and book appointments.", outcome: "Appointment booked", direction: "inbound", actions: ["book_visit", "calendar", "transfer", "memory"], questions: ["Department / doctor", "Preferred date", "New or follow-up visit"] },
-  { key: "car_dealer", industry: "Car dealerships", title: "Follow up enquiries, book test drives", example: "Follow up website enquiries for the new SUV and book a test drive at the nearest showroom.", outcome: "Test drive booked", direction: "outbound", actions: ["save_lead", "book_visit", "callback", "whatsapp"], questions: ["Model interest", "Budget / finance", "Exchange vehicle"] },
-  { key: "cod", industry: "E-commerce", title: "Confirm cash-on-delivery orders", example: "Call every COD order, confirm the address and delivery time, and cancel fake orders.", outcome: "Order confirmed", direction: "outbound", actions: ["webhook", "callback", "whatsapp"], questions: ["Address correct", "Available for delivery", "Still wants the order"] },
-  { key: "restaurant", industry: "Restaurants", title: "Take table and party bookings", example: "Answer our restaurant line, take table bookings and party enquiries for 20+ people.", outcome: "Table booked", direction: "inbound", actions: ["book_visit", "calendar", "transfer"], questions: ["Date & time", "Number of guests", "Occasion"] },
-  { key: "recruitment", industry: "Recruitment", title: "Screen candidates", example: "Call applicants for the sales executive role, check notice period, current salary and location.", outcome: "Candidate shortlisted", direction: "outbound", actions: ["save_lead", "callback", "webhook"], questions: ["Notice period", "Current / expected salary", "Location"] },
-];
-
-export const templateByKey = (key: string) => TEMPLATES.find((t) => t.key === key) ?? TEMPLATES[0];
 // Unknown ids (e.g. older v3 speakers) fall back to the first natural voice for that language.
 export const voiceById = (id: string, lang?: Language) =>
   VOICES.find((v) => v.id === id) ?? (lang ? voicesFor(lang)[0] : undefined) ?? VOICES[0];
 export const languageById = (id: Language) => LANGUAGES.find((l) => l.id === id) ?? LANGUAGES[0];
 
-const KEYWORDS: Record<string, string[]> = {
-  real_estate: ["plot", "flat", "villa", "site visit", "property", "real estate", "apartment", "layout", "venture"],
-  loans: ["loan", "emi", "insurance", "document", "kyc", "policy", "credit"],
-  coaching: ["student", "batch", "course", "coaching", "class", "neet", "jee", "fees", "admission"],
-  hospital: ["patient", "doctor", "clinic", "hospital", "appointment", "opd"],
-  car_dealer: ["car", "test drive", "showroom", "suv", "bike", "vehicle"],
-  cod: ["cod", "order", "delivery", "cash on delivery", "address"],
-  restaurant: ["table", "restaurant", "party", "dinner", "booking for"],
-  recruitment: ["candidate", "notice period", "salary", "hiring", "interview", "job"],
-};
-
-export function guessTemplate(task: string): Template {
-  const t = task.toLowerCase();
-  let best = TEMPLATES[0], score = 0;
-  for (const tpl of TEMPLATES) {
-    const s = (KEYWORDS[tpl.key] ?? []).filter((k) => t.includes(k)).length;
-    if (s > score) { best = tpl; score = s; }
-  }
-  return best;
-}
 
 // Price per connected minute, in rupees (credits).
-export const PRICE_PER_MIN = { standard: 4.5, premium: 6 };

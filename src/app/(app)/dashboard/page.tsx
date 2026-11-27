@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { ArrowDownRight, ArrowRight, ArrowUpRight, Headset, Minus } from "lucide-react";
+import { ArrowDownRight, ArrowRight, ArrowUpRight, Minus } from "lucide-react";
 import { connection } from "next/server";
 import { Funnel, Spark, TrendChart, TrendLegend } from "@/components/charts";
 import { Card, CardHead, LeadBadge, PageHeader, Tag, cx } from "@/components/ui";
 import { Waveform } from "@/components/Waveform";
 import { languageById, voiceById } from "@/lib/catalog";
-import { ago, inr, maskPhone, num, pct, pluralOutcome } from "@/lib/format";
+import { ago, maskPhone, mmss, num, pct, pluralOutcome } from "@/lib/format";
 import { daily, metrics, since } from "@/lib/metrics";
 import { getStore } from "@/lib/store";
 
@@ -44,29 +44,23 @@ export default async function Dashboard() {
   const hour = Number(new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata", hour: "numeric", hour12: false }).format(new Date()));
   const greet = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
-  // Headline goal: the AI employee with the most wins this week.
+  // Headline goal: the AI agent with the most wins this week.
   const winsBy = (o: string) => week.filter((c) => c.outcome === o).length;
   const mainOutcome = [...agents].sort((x, y) => winsBy(y.outcome) - winsBy(x.outcome))[0]?.outcome ?? "Outcomes";
   const mainWins = winsBy(mainOutcome);
   const hot = leads.filter((l) => l.status === "hot").slice(0, 5);
   const wins = calls.filter((c) => c.outcome && agents.some((a) => a.outcome === c.outcome)).slice(0, 5);
 
-  // Cost per win over a 3-day window, so days without a win don't read as a drop to zero.
-  const costTrend = trend.map((_, i) => {
-    const win = trend.slice(Math.max(0, i - 2), i + 1);
-    const o = win.reduce((a, d) => a + d.outcomes, 0);
-    return o ? win.reduce((a, d) => a + d.spend, 0) / o : 0;
-  });
 
   const kpis = [
     { label: "Wins", value: num(m.outcomes), now: m.outcomes, prev: mp.outcomes, upIs: "good" as const,
       spark: trend.map((d) => d.outcomes), sub: `${pct(m.outcomeRate, m.connected > 0)} of connected calls` },
     { label: "Connect rate", value: pct(m.connectRate, m.calls > 0), now: m.connectRate, prev: mp.connectRate, upIs: "good" as const,
       spark: trend.map((d) => (d.calls ? d.connected / d.calls : 0)), sub: `${num(m.connected)} of ${num(m.calls)} calls answered` },
-    { label: "Spend", value: inr(m.spend), now: m.spend, prev: mp.spend, upIs: "neutral" as const,
-      spark: trend.map((d) => d.spend), sub: `${num(Math.round(m.minutes))} talk minutes` },
-    { label: "Cost per win", value: m.outcomes ? inr(m.costPerOutcome) : "None yet", now: m.costPerOutcome, prev: mp.costPerOutcome, upIs: "bad" as const,
-      spark: costTrend, sub: "Spend divided by wins" },
+    { label: "Talk time", value: `${num(Math.round(m.minutes))} min`, now: m.minutes, prev: mp.minutes, upIs: "good" as const,
+      spark: trend.map((d) => d.connected), sub: `${mmss(m.avgDurationSec)} average call` },
+    { label: "Callbacks booked", value: num(m.callbacks), now: m.callbacks, prev: mp.callbacks, upIs: "good" as const,
+      spark: trend.map((d) => d.connected - d.outcomes), sub: "Customers who asked to be called later" },
   ];
 
   return (
@@ -74,9 +68,6 @@ export default async function Dashboard() {
       <PageHeader eyebrow={`${greet}. Here is how the last 7 days went.`} title={`${pluralOutcome(mainOutcome, mainWins)} this week`}>
         <Link href="/calls" className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[13px] font-medium text-muted transition-colors hover:bg-cold-soft hover:text-ink">
           All calls <ArrowRight size={14} strokeWidth={2} />
-        </Link>
-        <Link href="/talk" className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-accent-ink">
-          <Headset size={15} strokeWidth={2} /> Talk to AI
         </Link>
       </PageHeader>
 
@@ -123,7 +114,7 @@ export default async function Dashboard() {
 
       <section className="mb-6">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-[14px] font-semibold tracking-[-0.01em]">Your AI employees</h2>
+          <h2 className="text-[14px] font-semibold tracking-[-0.01em]">Your AI agents</h2>
           <Link href="/agents" className="inline-flex items-center gap-1 text-[13px] font-medium text-muted hover:text-ink">
             Manage <ArrowRight size={14} strokeWidth={2} />
           </Link>
@@ -178,7 +169,7 @@ export default async function Dashboard() {
           </ul>
         </Card>
         <Card>
-          <CardHead title="Latest wins" hint="Booked by your AI employees" />
+          <CardHead title="Latest wins" hint="Booked by your AI agents" />
           <ul className="divide-y divide-line border-t border-line">
             {wins.map((c) => (
               <li key={c.id}>

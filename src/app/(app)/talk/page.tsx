@@ -18,7 +18,7 @@ export default async function TalkPage() {
   }));
   return (
     <>
-      <PageHeader eyebrow="Call any AI employee from your browser. Great for showing clients." title="Talk to AI" />
+      <PageHeader eyebrow="Talk to your AI agents from the browser, just like a phone call." title="Talk to AI" />
       <div className="mb-6 flex flex-wrap gap-x-6 gap-y-2 text-[13px] text-muted">
         <span className="flex items-center gap-1.5"><Mic size={14} strokeWidth={1.75} /> Allow the microphone when asked</span>
         <span className="flex items-center gap-1.5"><Headphones size={14} strokeWidth={1.75} /> Headphones avoid echo</span>

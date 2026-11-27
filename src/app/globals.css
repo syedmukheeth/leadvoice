@@ -60,7 +60,7 @@ body {
 
 :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; border-radius: 6px; }
 
-/* Motion is kept for real state only: an AI employee speaking, a live call. */
+/* Motion is kept for real state only: an AI agent speaking, a live call. */
 @keyframes wave { 0%, 100% { transform: scaleY(.25); } 50% { transform: scaleY(1); } }
 .wave-bar { animation: wave 1.1s ease-in-out infinite; transform-origin: center; }
 

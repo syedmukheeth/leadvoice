@@ -18,7 +18,7 @@ export async function POST(request: Request) {
   const items: Record<string, unknown>[] = Array.isArray(body.leads) ? body.leads.slice(0, 500) : [body];
   const agentId = typeof body.agent_id === "string" && store.agents.some((a) => a.id === body.agent_id)
     ? body.agent_id : store.agents.find((a) => a.status === "live")?.id ?? store.agents[0]?.id;
-  if (!agentId) return Response.json({ error: "Create an AI employee first" }, { status: 409 });
+  if (!agentId) return Response.json({ error: "Create an AI agent first" }, { status: 409 });
 
   const result = await addLeads(items.map((i) => ({ name: String(i.name ?? ""), phone: String(i.phone ?? ""), source: String(i.source ?? "API") })), agentId);
   await mutate((s) => {

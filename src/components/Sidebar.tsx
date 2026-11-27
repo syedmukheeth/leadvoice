@@ -2,17 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AudioLines, Bot, Code2, Headset, LayoutGrid, PhoneCall, Settings, Users } from "lucide-react";
+import { AudioLines, Bot, Headset, LayoutGrid, PhoneCall, Plug, Settings, Users } from "lucide-react";
+import { CLIENT } from "@/lib/client";
 import { cx } from "./ui";
 
 const NAV = [
   { href: "/dashboard", label: "Overview", icon: LayoutGrid },
   { href: "/talk", label: "Talk to AI", icon: Headset },
-  { href: "/agents", label: "AI employees", icon: Bot },
+  { href: "/agents", label: "AI agents", icon: Bot },
   { href: "/calls", label: "Calls", icon: PhoneCall },
   { href: "/leads", label: "Leads", icon: Users },
-  { href: "/voices", label: "Voices", icon: AudioLines },
-  { href: "/developers", label: "Developers", icon: Code2 },
+  { href: "/developers", label: "Integrations", icon: Plug },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
@@ -24,12 +24,15 @@ export function Logo({ className }: { className?: string }) {
       <span className="grid h-7 w-7 place-items-center rounded-lg bg-ink text-white">
         <AudioLines size={15} strokeWidth={2} />
       </span>
-      <span className="text-[15px] font-semibold tracking-[-0.02em] text-ink">LeadVoice</span>
+      <span className="min-w-0 leading-tight">
+        <span className="block truncate text-[14.5px] font-semibold tracking-[-0.02em] text-ink">{CLIENT.name}</span>
+        <span className="block text-[11.5px] text-faint">{CLIENT.portal}</span>
+      </span>
     </span>
   );
 }
 
-export function Sidebar({ workspace, credits, onDuty }: { workspace: string; credits: number; onDuty: number }) {
+export function Sidebar({ onDuty }: { onDuty: number }) {
   const path = usePathname();
   return (
     <aside className="fixed inset-y-0 left-0 hidden w-[240px] flex-col border-r border-line bg-surface lg:flex">
@@ -38,10 +41,9 @@ export function Sidebar({ workspace, credits, onDuty }: { workspace: string; cre
       </Link>
 
       <div className="mx-3 mb-4 rounded-lg border border-line px-3 py-2.5">
-        <p className="truncate text-[13px] font-semibold text-ink">{workspace}</p>
-        <p className="mt-0.5 flex items-center gap-1.5 text-[12px] text-muted">
+        <p className="flex items-center gap-1.5 text-[12.5px] text-muted">
           <span className={cx("h-1.5 w-1.5 rounded-full", onDuty ? "bg-live live-dot" : "bg-line-2")} />
-          {onDuty ? `${onDuty} AI employee${onDuty > 1 ? "s" : ""} on duty` : "Everyone is paused"}
+          {onDuty ? `${onDuty} AI agent${onDuty > 1 ? "s" : ""} on duty` : "All agents are paused"}
         </p>
       </div>
 
@@ -65,13 +67,7 @@ export function Sidebar({ workspace, credits, onDuty }: { workspace: string; cre
         })}
       </nav>
 
-      <div className="m-3 rounded-lg border border-line p-3">
-        <p className="text-[12px] text-muted">Credits</p>
-        <div className="mt-0.5 flex items-baseline justify-between gap-2">
-          <p className="text-[20px] font-semibold tracking-[-0.02em] text-ink">₹{credits.toLocaleString("en-IN")}</p>
-          <Link href="/settings#billing" className="text-[12.5px] font-medium text-accent hover:text-accent-ink">Top up</Link>
-        </div>
-      </div>
+      <p className="px-5 pb-4 text-[11.5px] text-faint">Powered by LeadVoice</p>
     </aside>
   );
 }

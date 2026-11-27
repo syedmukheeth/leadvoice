@@ -45,6 +45,7 @@ export function TestCall({ agentId, name, languageLabel, open, onClose }: {
   const [state, setState] = useState<State>("idle");
   const [lines, setLines] = useState<Line[]>([]);
   const [setup, setSetup] = useState<string | null>(null); // a missing-key problem: stop the call, show it once
+  const fillers = useRef<string[]>([]); // "one moment" clips in this agent's voice
   const [muted, setMuted] = useState(false);
   const [text, setText] = useState("");
   const [seconds, setSeconds] = useState(0);
@@ -75,15 +76,44 @@ export function TestCall({ agentId, name, languageLabel, open, onClose }: {
     return () => clearInterval(t);
   }, [state]);
 
+  // One request, retried once if the connection drops or times out, so a blip never ends a turn.
+  async function send(payload: Record<string, unknown>) {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const res = await fetch("/api/test-call", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ agentId, history: history.current, ...payload }),
+          signal: AbortSignal.timeout(25000),
+        });
+        return { res, d: await res.json() };
+      } catch (e) {
+        const network = e instanceof TypeError || (e instanceof DOMException && (e.name === "TimeoutError" || e.name === "AbortError"));
+        if (!network || attempt >= 1) throw Object.assign(e instanceof Error ? e : new Error(String(e)), { network });
+      }
+    }
+  }
+
+  // Plays a short "one moment" clip if the reply is slow; resolves when it has finished.
+  function playFiller(): Promise<void> {
+    const clips = fillers.current;
+    if (!clips.length) return Promise.resolve();
+    const clip = clips[Math.floor(Math.random() * clips.length)];
+    return new Promise((done) => {
+      const a = new Audio(`data:audio/mpeg;base64,${clip}`);
+      audio.current = a;
+      a.onended = () => done(); a.onerror = () => done();
+      a.play().catch(() => done());
+    });
+  }
+
   async function turn(payload: Record<string, unknown>) {
     set("thinking");
+    let filler: Promise<void> | null = null;
+    const slow = payload.start ? null : setTimeout(() => { filler = playFiller(); }, 2200);
     try {
-      const res = await fetch("/api/test-call", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ agentId, history: history.current, ...payload }),
-        signal: AbortSignal.timeout(40000),
-      });
-      const d = await res.json();
+      const { res, d } = await send(payload);
+      if (slow) clearTimeout(slow);
+      if (filler) await filler; // let "one moment" finish before the real answer
       if (!res.ok && d.setup) { setSetup(d.error); hangUp(); return; }
       if (!res.ok) throw new Error(d.error ?? "No answer");
       if (payload.audio || payload.text) {
@@ -105,9 +135,11 @@ export function TestCall({ agentId, name, languageLabel, open, onClose }: {
         a.play().catch(after);
       } else after();
     } catch (e) {
-      // A dropped or timed-out connection: keep the call going and ask again, in plain words.
-      const network = e instanceof TypeError || (e instanceof DOMException && (e.name === "TimeoutError" || e.name === "AbortError"));
-      add({ who: "error", text: network ? "The connection dropped. Please say that again." : e instanceof Error ? e.message : "Something went wrong" });
+      if (slow) clearTimeout(slow);
+      if (filler) await filler;
+      // Still failing after a retry: keep the call going and ask again, in plain words.
+      const network = Boolean((e as { network?: boolean }).network);
+      add({ who: "error", text: network ? "Sorry, the line dropped for a moment. Please say that again." : e instanceof Error ? e.message : "Something went wrong" });
       set("listening");
     }
   }
@@ -121,6 +153,9 @@ export function TestCall({ agentId, name, languageLabel, open, onClose }: {
       set("ended");
       return;
     }
+    // Fetch the "one moment" clips in the background; the call doesn't wait for them.
+    fetch("/api/test-call", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ agentId, filler: true }) })
+      .then((r) => r.json()).then((d) => { fillers.current = d.fillers ?? []; }).catch(() => {});
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
       const ctx = new AudioContext();
@@ -210,7 +245,7 @@ export function TestCall({ agentId, name, languageLabel, open, onClose }: {
           ))}
           {setup && (
             <div role="alert" className="mx-2 mt-2 rounded-xl border border-white/10 bg-white/5 p-4 text-center">
-              <p className="text-[14px] font-medium text-white">This AI employee can&apos;t take calls yet</p>
+              <p className="text-[14px] font-medium text-white">This AI agent can&apos;t take calls yet</p>
               <p className="mt-1.5 text-[12.5px] leading-relaxed text-white/60">{setup}</p>
               <p className="mt-1.5 text-[12.5px] leading-relaxed text-white/60">Add the missing keys in Vercel (Settings, Environment Variables), then redeploy.</p>
             </div>

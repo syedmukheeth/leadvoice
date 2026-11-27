@@ -1,18 +1,19 @@
-# LeadVoice
+# ASRG Constructions: AI calling desk
 
-Self-serve AI telecallers for Indian businesses. Describe the job in one sentence, pick a natural Telugu, Hindi or English voice, and the AI employee calls your leads, answers questions from what you taught it, and books the visit, callback or order.
+A custom AI calling portal built by LeadVoice for one business. The AI agents call leads and answer calls in Telugu, Hindi and English, answer questions only from what they've been taught, and book site visits and callbacks.
 
-This is the web app (Next.js 16). The phone-calling voice worker lives in the sibling `telugu-agent` project.
+Everything client-specific lives in `src/lib/client.ts` (name, city, how names are pronounced) and in each agent's script and knowledge. The phone-calling voice agent lives in the sibling `telugu-agent` project.
 
-## What's in it
+## Pages
 
-- **Overview:** wins, connect rate, spend and cost per win, a 14-day call chart and the call funnel.
-- **AI employees:** hire from one sentence (Gemini writes the script), edit script, knowledge, actions and voice, and test-call in the browser.
+- **Overview:** site visits booked, connect rate, talk time and callbacks, a 14-day call chart and the call funnel.
+- **Talk to AI:** call any agent from the browser, like a phone call. Use Chrome and allow the microphone.
+- **AI agents:** each agent's script, knowledge, actions and voice.
 - **Calls:** every call with filters, search and a transcript replay.
-- **Leads:** status board, paste or CSV import, and a lead API (`POST /api/v1/leads` with a Bearer key).
-- **Voices:** native Sarvam voices with samples.
+- **Leads:** status board, paste or CSV import.
+- **Integrations:** a lead API (`POST /api/v1/leads` with a Bearer key) and an outcome webhook for websites, ads and CRMs.
 
-Until Supabase is connected the app runs on a sample workspace stored in `.data/store.json` (on Vercel, in the server's temp folder, reset on redeploy).
+Sample leads and calls are stored in `.data/store.json` (on Vercel, in the server's temp folder, reset on redeploy).
 
 ## Run locally
 
@@ -22,12 +23,12 @@ cp .env.example .env.local   # add GOOGLE_API_KEY and SARVAM_API_KEY
 npm run dev                  # http://localhost:3000
 ```
 
-Keys are also picked up from `../telugu-agent/.env`, so if the voice agent is set up you can skip `.env.local`.
+Keys are also read from `../telugu-agent/.env`, so if the voice agent is set up you can skip `.env.local`.
 
 ## Checks
 
 ```bash
-npm test          # unit tests (node --test)
+npm test
 npm run lint
 npx tsc --noEmit
 npm run build
@@ -43,6 +44,4 @@ vercel env add SARVAM_API_KEY production
 vercel deploy --prod
 ```
 
-The deployed site is password protected: it stays locked until `SITE_PASSWORD` is set, and visitors enter it once per device (30 days). The lead API (`/api/v1/leads`) uses its own Bearer keys instead.
-
-Without the two API keys the site still works on sample data; test calls, AI script writing and voice samples switch on once they are added.
+The site is password protected: it stays locked until `SITE_PASSWORD` is set, and visitors enter it once per device (30 days).

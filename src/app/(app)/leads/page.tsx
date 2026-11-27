@@ -13,7 +13,7 @@ export default async function LeadsPage() {
   const { leads, agents } = await getStore();
   return (
     <>
-      <PageHeader eyebrow="Everyone your AI employees call" title="Leads" />
+      <PageHeader eyebrow="Everyone your AI agents call" title="Leads" />
       <LeadsView leads={leads} agents={agents.map((a) => ({ id: a.id, name: a.name, status: a.status }))} />
     </>
   );

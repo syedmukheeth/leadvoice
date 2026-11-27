@@ -70,7 +70,7 @@ export function LeadsView({ leads, agents }: { leads: Lead[]; agents: AgentLite[
             <thead>
               <tr className="border-b border-line bg-paper text-left text-[12px] text-muted">
                 <th className="px-5 py-2.5 font-medium">Lead</th><th className="px-3 font-medium">Status</th><th className="px-3 font-medium">Budget</th>
-                <th className="px-3 font-medium">Notes</th><th className="px-3 font-medium">Next step</th><th className="px-3 font-medium">AI employee</th><th className="px-5 text-right font-medium">Added</th>
+                <th className="px-3 font-medium">Notes</th><th className="px-3 font-medium">Next step</th><th className="px-3 font-medium">AI agent</th><th className="px-5 text-right font-medium">Added</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">

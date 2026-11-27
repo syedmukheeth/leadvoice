@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import { ArrowRight, CircleCheck } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Card, CardHead, CallBadge, LeadBadge, PageHeader, cx } from "@/components/ui";
 import { Waveform } from "@/components/Waveform";
-import { languageById, templateByKey, voiceById } from "@/lib/catalog";
-import { dayTime, inr, mmss, pct } from "@/lib/format";
+import { languageById, voiceById } from "@/lib/catalog";
+import { dayTime, mmss, pct } from "@/lib/format";
 import { metrics, since } from "@/lib/metrics";
 import { getStore } from "@/lib/store";
 import { AgentEditor, StatusToggle } from "./AgentEditor";
@@ -17,44 +17,30 @@ export const instant = false;
 export async function generateMetadata({ params }: PageProps<"/agents/[id]">) {
   const { id } = await params;
   const agent = (await getStore()).agents.find((a) => a.id === id);
-  return { title: agent?.name ?? "AI employee" };
+  return { title: agent?.name ?? "AI agent" };
 }
 
-export default async function AgentPage({ params, searchParams }: PageProps<"/agents/[id]">) {
+export default async function AgentPage({ params }: PageProps<"/agents/[id]">) {
   await connection();
   const { id } = await params;
-  const { hired } = await searchParams;
-  const { agents, calls } = await getStore();
+  const { agents, calls, workspace } = await getStore();
   const agent = agents.find((a) => a.id === id);
   if (!agent) notFound();
   const mine = calls.filter((c) => c.agentId === agent.id);
   const m = metrics(since(mine, 30), agents);
-  const tpl = templateByKey(agent.template);
   const stats: [string, string][] = [
     ["Calls", String(m.calls)], ["Connect rate", pct(m.connectRate, m.calls > 0)], ["Wins", String(m.outcomes)],
-    ["Average call", mmss(m.avgDurationSec)], ["Spend", inr(m.spend)],
+    ["Average call", mmss(m.avgDurationSec)], ["Callbacks", String(m.callbacks)],
   ];
 
   return (
     <>
-      {hired && (
-        <div className="rise mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-accent/25 bg-accent-soft px-5 py-4">
-          <CircleCheck size={18} strokeWidth={2} className="shrink-0 text-accent" />
-          <p className="text-[14px] text-ink">
-            <span className="font-semibold">{agent.name} is hired and on duty.</span> Try a test call first, then add leads. Calls start within a minute, between 9 AM and 9 PM.
-          </p>
-          <Link href="/leads" className="ml-auto inline-flex items-center gap-1 rounded-lg bg-ink px-3 py-1.5 text-[13px] font-medium text-white hover:bg-ink-2">
-            Add leads <ArrowRight size={14} strokeWidth={2} />
-          </Link>
-        </div>
-      )}
-
       <PageHeader
-        eyebrow={`${tpl.industry}, ${languageById(agent.language).native}, ${voiceById(agent.voiceId, agent.language).name} voice`}
+        eyebrow={`${workspace.industry}, ${languageById(agent.language).native}, ${voiceById(agent.voiceId, agent.language).name} voice`}
         title={<>{agent.name}<span className="font-normal text-faint">, goal: {agent.outcome.toLowerCase()}</span></>}
       >
         <StatusToggle agentId={agent.id} status={agent.status} />
-        <TestCallButton agentId={agent.id} name={agent.name} languageLabel={languageById(agent.language).label} autoOpen={Boolean(hired)} />
+        <TestCallButton agentId={agent.id} name={agent.name} languageLabel={languageById(agent.language).label} />
       </PageHeader>
 
       {/* gap-px over a line-coloured background draws hairline dividers at every breakpoint */}

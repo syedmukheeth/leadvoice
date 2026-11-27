@@ -7,7 +7,7 @@ import { KeyMaker, WebhookForm } from "./DevTools";
 // Live workspace data: render on request (loading.tsx is the instant placeholder).
 export const instant = false;
 
-export const metadata = { title: "Developers" };
+export const metadata = { title: "Integrations" };
 
 export default async function DevelopersPage() {
   await connection();
@@ -15,10 +15,10 @@ export default async function DevelopersPage() {
   const agentId = agents[0]?.id ?? "ag_xxx";
   return (
     <>
-      <PageHeader eyebrow="API & webhooks" title="Developers" />
+      <PageHeader eyebrow="Send leads from your website, Facebook ads or CRM, and get call results back" title="Integrations" />
       <div className="grid gap-5 xl:grid-cols-[1.2fr_1fr]">
         <Card>
-          <CardHead title="Send a lead" hint="Your AI employee calls within a minute" />
+          <CardHead title="Send a lead" hint="Your AI agent calls within a minute" />
           <div className="px-5 pb-5">
             <pre className="overflow-x-auto rounded-lg bg-ink p-4 font-mono text-[12.5px] leading-relaxed text-white/90">
 {`curl -X POST https://<your-domain>/api/v1/leads \\

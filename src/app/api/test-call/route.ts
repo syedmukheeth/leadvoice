@@ -1,6 +1,7 @@
 import { agentReply, missingVoiceKeys, speak, transcribe, VoiceError, type Turn } from "@/lib/voice";
 import { getStore } from "@/lib/store";
 import { openingLine } from "@/lib/opening";
+import type { Language } from "@/lib/types";
 import { lockedResponse, unlockedRequest } from "@/lib/gate-server";
 
 // POST /api/test-call
@@ -16,13 +17,37 @@ export async function GET() {
   return Response.json({ ready: missing.length === 0, missing });
 }
 
+const FILLERS: Record<Language, string[]> = {
+  te: ["ఒక్క నిమిషం అండి.", "హా, చూస్తున్నాను అండి.", "సరే అండి, ఒక్క క్షణం."],
+  hi: ["जी, एक सेकंड।", "अच्छा, एक मिनट जी।", "जी, देख रहे हैं।"],
+  en: ["One moment, please.", "Sure, just a second.", "Okay, let me check."],
+};
+const fillerCache = new Map<string, string[]>();
+async function fillersFor(voiceId: string, language: Language): Promise<string[]> {
+  const key = `${voiceId}:${language}`;
+  if (!fillerCache.has(key)) {
+    const clips = await Promise.all(FILLERS[language].map((t) => speak(t, voiceId, language)));
+    fillerCache.set(key, clips.filter(Boolean));
+  }
+  return fillerCache.get(key)!;
+}
+
 export async function POST(request: Request) {
   if (!(await unlockedRequest())) return lockedResponse();
   const body = await request.json().catch(() => null);
   if (!body?.agentId) return Response.json({ error: "Missing agentId" }, { status: 400 });
   const { agents, workspace } = await getStore();
   const agent = agents.find((a) => a.id === body.agentId);
-  if (!agent) return Response.json({ error: "Unknown AI employee" }, { status: 404 });
+  if (!agent) return Response.json({ error: "Unknown AI agent" }, { status: 404 });
+
+  // Short "one moment" clips the call screen plays when a reply is slow, so there's no dead air.
+  if (body.filler) {
+    try {
+      return Response.json({ fillers: await fillersFor(agent.voiceId, agent.language) });
+    } catch {
+      return Response.json({ fillers: [] });
+    }
+  }
 
   const history: Turn[] = Array.isArray(body.history)
     ? body.history.filter((t: Turn) => (t?.who === "agent" || t?.who === "customer") && typeof t.text === "string").slice(-30)

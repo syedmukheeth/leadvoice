@@ -2,20 +2,11 @@
 
 import { createHash, randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { requireUnlocked } from "./gate-server";
 import { mutate, resetToSample } from "./store";
 import type { Agent, Lead } from "./types";
 
 const id = (p: string) => `${p}_${randomBytes(5).toString("hex")}`;
-
-export async function createAgent(input: Omit<Agent, "id" | "createdAt" | "status">) {
-  await requireUnlocked();
-  const agent: Agent = { ...input, id: id("ag"), status: "live", createdAt: new Date().toISOString() };
-  await mutate((s) => { s.agents.unshift(agent); });
-  revalidatePath("/", "layout");
-  redirect(`/agents/${agent.id}?hired=1`);
-}
 
 export async function updateAgent(agentId: string, patch: Partial<Pick<Agent, "name" | "role" | "opening" | "script" | "knowledge" | "outcome" | "voiceId" | "language" | "actions">>) {
   await requireUnlocked();

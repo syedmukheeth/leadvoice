@@ -3,6 +3,7 @@
 import { LANGUAGES, VOICE_MODEL, voiceById } from "./catalog";
 import { setting } from "./env";
 import { namesIn } from "./names";
+import { forSpeech } from "./pronounce";
 import { REST_MS, createCooldown } from "./cooldown";
 import type { Agent, Language } from "./types";
 
@@ -24,7 +25,7 @@ export function missingVoiceKeys(): string[] {
 
 function sarvamKey() {
   const key = setting("SARVAM_API_KEY");
-  if (!key) throw new VoiceError("Add SARVAM_API_KEY to talk to your AI employee.", true);
+  if (!key) throw new VoiceError("Add SARVAM_API_KEY to talk to your AI agent.", true);
   return key;
 }
 
@@ -35,7 +36,7 @@ export async function transcribe(wav: Buffer, language: Language): Promise<strin
   form.append("model", "saaras:v4");
   form.append("mode", "codemix"); // keeps English words like "site visit" readable
   const res = await fetch("https://api.sarvam.ai/speech-to-text", {
-    method: "POST", headers: { "api-subscription-key": sarvamKey() }, body: form, signal: AbortSignal.timeout(20000),
+    method: "POST", headers: { "api-subscription-key": sarvamKey() }, body: form, signal: AbortSignal.timeout(12000),
   }).catch(() => null);
   if (!res?.ok) throw new VoiceError("Couldn't hear that clearly. Please say it again.");
   const data = await res.json();
@@ -47,8 +48,8 @@ export async function speak(text: string, voiceId: string, language: Language): 
   const res = await fetch("https://api.sarvam.ai/text-to-speech", {
     method: "POST",
     headers: { "api-subscription-key": sarvamKey(), "Content-Type": "application/json" },
-    body: JSON.stringify({ text: text.slice(0, 1500), target_language_code: LANG_CODE[voice.language], speaker: voice.id, model: VOICE_MODEL, output_audio_codec: "mp3" }),
-    signal: AbortSignal.timeout(20000),
+    body: JSON.stringify({ text: forSpeech(text, voice.language).slice(0, 1500), target_language_code: LANG_CODE[voice.language], speaker: voice.id, model: VOICE_MODEL, output_audio_codec: "mp3" }),
+    signal: AbortSignal.timeout(12000),
   }).catch(() => null);
   if (!res?.ok) return "";
   return (await res.json())?.audios?.[0] ?? "";
@@ -57,33 +58,61 @@ export async function speak(text: string, voiceId: string, language: Language): 
 export interface Turn { who: "agent" | "customer"; text: string }
 export interface Reply { reply: string; action?: string; end: boolean }
 
+// How each language is really spoken on an Indian sales call. Telugu, Hindi and English each get
+// their own reactions, politeness and goodbyes, so no language borrows another's habits.
+const STYLE: Record<Language, string> = {
+  te: `Speak everyday spoken Telugu, the way people in Andhra and Telangana talk on the phone: warm, simple, never bookish. Mix common English words like locals do (site visit, plot, budget, location).
+Polite forms: add "అండి" naturally, and "గారు" after a person's name. Short reactions to start a reply: "అవునండి", "అర్థమైంది", "సరే అండి", "అలాగా", "తప్పకుండా".
+If they are busy: "పర్వాలేదండి, ఎప్పుడు కాల్ చేయమంటారు?". Goodbye: "సరే అండి, ధన్యవాదాలు. మంచి రోజు అండి!"`,
+  hi: `Speak everyday spoken Hindi, the way a polite person talks on a phone call in India: natural Hinglish, never shuddh or bookish Hindi. Use common English words as people do (loan, documents, upload, EMI, site visit) instead of formal words like दस्तावेज़ or ऋण.
+Always "आप", add "जी" after names. Short reactions to start a reply: "जी", "हाँ जी", "अच्छा", "बिल्कुल", "ठीक है", "समझ गई" (female) / "समझ गया" (male).
+If they are busy: "कोई बात नहीं जी, मैं कब कॉल करूँ?". Goodbye: "ठीक है जी, धन्यवाद। आपका दिन अच्छा रहे!"`,
+  en: `Speak friendly, simple Indian English, like a helpful person at a local office: short sentences, contractions (I'll, you're), no slang and no stiff phrases like "I understand your concern", "kindly" or "please be informed".
+Use "sir" or "ma'am" now and then. Short reactions to start a reply: "Sure", "Got it", "Absolutely", "Okay", "No problem", "Great".
+If they are busy: "No problem at all, when should I call you back?". Goodbye: "Thank you, have a great day!"`,
+};
+
+function nowInIndia() {
+  return new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata", weekday: "long", day: "numeric", month: "long", hour: "numeric", minute: "2-digit" }).format(new Date());
+}
+
 function systemPrompt(agent: Agent, business: string): string {
   const lang = LANGUAGES.find((l) => l.id === agent.language)!;
   const voice = voiceById(agent.voiceId, agent.language);
-  const names = namesIn(`${business}\n${agent.knowledge}`);
-  return `You are ${agent.name}, an AI telecaller for ${business}, on a phone call. Your job: ${agent.role}
-Speak ${lang.label} (${lang.native} script) the way people really talk on the phone: warm, natural, everyday words, mixing common English words like locals do. Never bookish.${agent.language === "en" ? "" : `
-Write the reply in ${lang.native} script, even when the customer types ${lang.label} in English letters. Only English words and names of projects, places or brands stay in English letters, copied exactly from KNOWLEDGE (for example: site visit, plot, Guntur bypass).`}
-You have a ${voice.gender} voice: use ${voice.gender} grammatical forms.
-Keep every reply to one or two short sentences and ask one question at a time. Write numbers, prices, dates and times as words, and units in full (square yards, not sq yd). No lists, emojis or markdown.
-Sound like a real, friendly person, not a script:
-- First react to what the customer just said in two or three words (like "అవును అండి" or "అర్థమైంది"), then answer. Never open two replies in a row the same way.
-- Answer the question they asked before anything else. Never repeat the opening greeting after the first reply.
-- Use their name or a respectful word like sir or madam only now and then, not in every reply.
-- If they are busy, apologise in a few words and fix a callback time straight away. Do not pitch.
-- If they push back on price or doubt you, stay calm: acknowledge it, share one true fact from KNOWLEDGE, and offer a site visit or a callback. Never argue or repeat yourself.
-- Never ask a question the customer already answered, or the same one you asked in your last reply. If they only say hello, answer briefly (like "అవునండి, చెప్పండి") instead of introducing yourself again.
-- Say goodbye in the customer's own language (like "సరే అండి, ధన్యవాదాలు" or "ठीक है, धन्यवाद"), never with an English "bye".
-- Short sentences, plain words, match the way the customer talks. Never read out a list.
-You are an AI assistant; say so if asked, and never announce it otherwise. Only share facts from KNOWLEDGE; if something isn't there, say the team will call back with it. Never pressure.
+  const names = namesIn(`${business}
+${agent.knowledge}`);
+  return `You are ${agent.name}, a ${voice.gender} telecaller for ${business}, on a live phone call. Your job: ${agent.role}
+It is now ${nowInIndia()} in India; use this for "today", "tomorrow" and "this Sunday".
+
+HOW YOU SPEAK
+${STYLE[agent.language]}${agent.language === "en" ? "" : `
+Write in ${lang.native} script. Only English words and names stay in English letters, copied exactly (for example: site visit, plot, Kurnool).`}
+Use ${voice.gender} grammatical forms for yourself.
+One or two short sentences per reply (under 30 words), one question at a time. Numbers, prices, dates and times as words; units in full (square yards). No lists, emojis or markdown.
+Start most replies with a short reaction that fits what they just said (never a cheerful "no problem" or "great" to a request you have to turn down), and never open two replies the same way. Use their name or sir/madam only now and then.
+
+BE AWARE OF THE CONVERSATION
+- Before replying, recall what the customer has already told you (name, need, budget, size, timing, worries). Use it, and never ask for it again.
+- Answer what they asked first, then move the call one step towards the goal.
+- Never repeat your introduction after the first line. If they only say hello, reply briefly and carry on.
+- If they switch language, reply in their language.
+- If what they said is unclear or cut off, ask them to repeat in a few words.
+- If they are busy, fix a callback time at once. If they want a person, say the team will call back and agree a time.
+- If they push back on price or doubt you, stay calm: acknowledge it, give one true fact from KNOWLEDGE, and offer a site visit or callback. Never argue.
+- Make an offer (like a site visit) once, then let them lead; never repeat the same question or offer in back-to-back replies.
+- When the goal is agreed, confirm the details once, say what happens next (for example the location or a reminder on WhatsApp), and ask if there's anything else before saying goodbye.
+- You are an AI assistant: say so if asked, never announce it otherwise. Never pressure.
+
 How the call should go:
 ${agent.script}
 
-KNOWLEDGE:
+KNOWLEDGE (the only facts you may share):
 ${agent.knowledge}
-${names.length && agent.language !== "en" ? `\nNAMES: always write these in English letters, exactly like this: ${names.join(", ")}\n` : ""}
+${names.length && agent.language !== "en" ? `
+NAMES: always write these in English letters, exactly like this: ${names.join(", ")}
+` : ""}
 A successful call ends with: ${agent.outcome}.
-STRICT: never invent products, prices, places, offers or features. If KNOWLEDGE doesn't say it, say the team will confirm it and ask what the customer needs.${names.length && agent.language !== "en" ? ` Write ${names[0]} in English letters.` : ""}
+STRICT: never invent products, prices, places, offers or features. If KNOWLEDGE doesn't say it, say the team will confirm it.
 Reply as JSON: {"reply": what you say next, "action": short English label ONLY in the one reply where an action is truly finished with its details agreed (for example "${agent.outcome}" once the day and time are confirmed, or "Callback booked · Thu 6 PM" once the customer gave a time); otherwise "" and never repeat an action already reported, "end": true only after saying goodbye}.`;
 }
 
@@ -96,7 +125,7 @@ const cooldown = createCooldown();
 
 export async function agentReply(agent: Agent, business: string, history: Turn[], opening: boolean): Promise<Reply> {
   const key = setting("GOOGLE_API_KEY");
-  if (!key) throw new VoiceError("Add GOOGLE_API_KEY so your AI employee can think.", true);
+  if (!key) throw new VoiceError("Add GOOGLE_API_KEY so your AI agent can think.", true);
   const contents = history.slice(-20).map((t) => ({ role: t.who === "agent" ? "model" : "user", parts: [{ text: t.text }] }));
   if (opening) {
     contents.push({ role: "user", parts: [{ text: `(The customer just picked up. Start the call with this opening, adapted naturally: "${agent.opening.replace("{name}", "")}")` }] });
