@@ -1,7 +1,7 @@
 // Run: npm test
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { hasForeignScript, parseReply, quotaRestMs, requestBody } from "./llm.ts";
+import { hasForeignScript, parseReply, quotaRestMs, requestBody, saysGoodbye } from "./llm.ts";
 
 const contents = [{ role: "user", parts: [{ text: "hello" }] }];
 
@@ -37,4 +37,11 @@ test("hasForeignScript catches other Indian scripts but allows Telugu, Hindi and
   assert.equal(hasForeignScript("పదునెనిమిది లక్షలు, Kurnool"), false);
   assert.equal(hasForeignScript("अठारह लाख, site visit"), false);
   assert.equal(hasForeignScript("Eighteen lakh rupees"), false);
+});
+
+test("saysGoodbye recognises goodbyes in all three languages", () => {
+  assert.equal(saysGoodbye("సరే అండి, ధన్యవాదాలు. మంచి రోజు అండి!"), true);
+  assert.equal(saysGoodbye("जी, धन्यवाद। आपका दिन अच्छा रहे!"), true);
+  assert.equal(saysGoodbye("Thank you, have a great day!"), true);
+  assert.equal(saysGoodbye("ఈ ఆదివారం పదకొండు గంటలకు site visit కన్ఫర్మ్ చేశాను. location WhatsApp కి వస్తుంది."), false);
 });

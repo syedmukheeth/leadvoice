@@ -5,7 +5,7 @@ import { setting } from "./env";
 import { namesIn } from "./names";
 import { forSpeech } from "./pronounce";
 import { REST_MS, createCooldown } from "./cooldown";
-import { MODELS, hasForeignScript, parseReply, quotaRestMs, requestBody } from "./llm";
+import { MODELS, hasForeignScript, parseReply, quotaRestMs, requestBody, saysGoodbye } from "./llm";
 import type { Agent, Language } from "./types";
 
 const LANG_CODE: Record<Language, string> = { te: "te-IN", hi: "hi-IN", en: "en-IN" };
@@ -77,7 +77,18 @@ function nowInIndia() {
   return new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata", weekday: "long", day: "numeric", month: "long", hour: "numeric", minute: "2-digit" }).format(new Date());
 }
 
-function systemPrompt(agent: Agent, business: string): string {
+// A short reminder of what the agent just said, so it doesn't open, ask or offer the same way again.
+// Small models miss repetition in a long history; naming it explicitly works.
+export function recentReplies(history: Turn[]): string {
+  const mine = history.filter((t) => t.who === "agent").slice(-2).map((t) => t.text.trim()).filter(Boolean);
+  if (!mine.length) return "";
+  const firstWords = [...new Set(mine.map((t) => t.split(/[\s,!.?।]+/)[0]).filter(Boolean))];
+  const lines = mine.map((t) => `- "${t}"`).join("\n");
+  const openers = firstWords.map((w) => `"${w}"`).join(" or ");
+  return `\nYOUR LAST REPLIES (don't repeat them):\n${lines}\nDon't start with ${openers}. Don't ask a question or make an offer that's already in these replies; if the customer hasn't answered it, move the call forward another way.\n`;
+}
+
+function systemPrompt(agent: Agent, business: string, history: Turn[] = []): string {
   const lang = LANGUAGES.find((l) => l.id === agent.language)!;
   const voice = voiceById(agent.voiceId, agent.language);
   const names = namesIn(`${business}
@@ -89,7 +100,7 @@ HOW YOU SPEAK
 ${STYLE[agent.language]}${agent.language === "en" ? "" : `
 Write in ${lang.native} script. Only English words and names stay in English letters, copied exactly (for example: site visit, plot, Kurnool).`}
 Use ${voice.gender} grammatical forms for yourself.
-One or two short sentences per reply (under 30 words), one question at a time. Numbers, prices, dates and times as words; units in full (square yards). No lists, emojis or markdown.
+At most two short sentences per reply, each under 15 words, and one question at a time. Numbers, prices, dates and times as words; units in full (square yards). No lists, emojis or markdown.
 Start most replies with a short reaction that fits what they just said (never a cheerful "no problem" or "great" to a request you have to turn down), and never open two replies the same way. Use their name or sir/madam only now and then.
 
 BE AWARE OF THE CONVERSATION
@@ -100,7 +111,7 @@ BE AWARE OF THE CONVERSATION
 - If what they said is unclear or cut off, ask them to repeat in a few words.
 - If they are busy, fix a callback time at once. If they want a person, say the team will call back and agree a time.
 - If they push back on price or doubt you, stay calm: acknowledge it, give one true fact from KNOWLEDGE, and offer a site visit or callback. Never argue.
-- Make an offer (like a site visit) once, then let them lead; never repeat the same question or offer in back-to-back replies.
+- Offer the goal (like a site visit) once. Offer it again only when the customer shows interest or asks about timing, never in back-to-back replies.
 - When the goal is agreed, confirm the details once, say what happens next (for example the location or a reminder on WhatsApp), and ask if there's anything else before saying goodbye.
 - You are an AI assistant: say so if asked, never announce it otherwise. Never pressure.
 
@@ -113,7 +124,7 @@ ${names.length && agent.language !== "en" ? `
 NAMES: always write these in English letters, exactly like this: ${names.join(", ")}
 ` : ""}
 A successful call ends with: ${agent.outcome}.
-STRICT: never invent products, prices, places, offers or features. If KNOWLEDGE doesn't say it, say the team will confirm it.
+${recentReplies(history)}STRICT: never invent products, prices, places, offers or features. If KNOWLEDGE doesn't say it, say the team will confirm it.
 Reply as JSON: {"reply": what you say next, "action": short English label ONLY in the one reply where an action is truly finished with its details agreed (for example "${agent.outcome}" once the day and time are confirmed, or "Callback booked · Thu 6 PM" once the customer gave a time); otherwise "" and never repeat an action already reported, "end": true only after saying goodbye}.`;
 }
 
@@ -131,7 +142,7 @@ export async function agentReply(agent: Agent, business: string, history: Turn[]
   const models = cooldown.order(
     [setting("LLM_TEST_MODEL"), ...MODELS].filter((m, i, a): m is string => !!m && a.indexOf(m) === i),
   );
-  const system = systemPrompt(agent, business);
+  const system = systemPrompt(agent, business, history);
   const begun = Date.now();
   for (const model of models) {
     if (Date.now() - begun > TOTAL_BUDGET_MS) break;
@@ -164,7 +175,7 @@ export async function agentReply(agent: Agent, business: string, history: Turn[]
       .map((p: { text?: string }) => p.text ?? "").join("") ?? "";
     const parsed = parseReply(text);
     if (parsed && hasForeignScript(parsed.reply)) { console.info(`[voice] ${model}: reply in a foreign script, trying the next model`); continue; }
-    if (parsed) return parsed;
+    if (parsed) return { ...parsed, end: parsed.end && saysGoodbye(parsed.reply) };
   }
   throw new VoiceError("Sorry, I'm a little busy right now. Please say that again in a moment.");
 }

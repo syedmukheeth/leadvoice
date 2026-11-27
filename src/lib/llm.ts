@@ -64,3 +64,9 @@ export function quotaRestMs(error: unknown, now = new Date()): number {
 export function hasForeignScript(text: string): boolean {
   return /[ঀ-௿ಀ-෿]/.test(text);
 }
+
+// A call may only end on a reply that actually says goodbye. Models sometimes mark "end" on the
+// booking confirmation itself, which would hang up on the customer mid-thought.
+export function saysGoodbye(text: string): boolean {
+  return /ధన్యవాద|ధన్యవాదాలు|బై|धन्यवाद|शुक्रिया|thank|bye|good day|great day|take care/i.test(text);
+}
