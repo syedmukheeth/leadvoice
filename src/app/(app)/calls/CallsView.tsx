@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { callTranscript } from "@/lib/actions";
 import { ArrowDownLeft, ArrowUpRight, Search, X, Zap } from "lucide-react";
 import { Card, CallBadge, LeadBadge, cx } from "@/components/ui";
 import { Waveform } from "@/components/Waveform";
 import { dayTime, maskPhone, mmss } from "@/lib/format";
-import type { Call, Language } from "@/lib/types";
+import type { Call, Language, TranscriptLine } from "@/lib/types";
 
 type AgentLite = { id: string; name: string; outcome: string; language: Language };
 const FILTERS = [
@@ -16,6 +17,7 @@ export function CallsView({ calls, agents, initialAgent, initialOpen }: { calls:
   const [agent, setAgent] = useState(initialAgent);
   const [filter, setFilter] = useState<(typeof FILTERS)[number][0]>("all");
   const [q, setQ] = useState("");
+  const [shown, setShown] = useState(50);
   const [open, setOpen] = useState<Call | null>(() => calls.find((c) => c.id === initialOpen) ?? null);
   const wins = useMemo(() => new Set(agents.map((a) => a.outcome)), [agents]);
   const agentName = (id: string) => agents.find((a) => a.id === id)?.name ?? "—";
@@ -68,7 +70,7 @@ export function CallsView({ calls, agents, initialAgent, initialOpen }: { calls:
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
-              {list.slice(0, 200).map((c) => (
+              {list.slice(0, shown).map((c) => (
                 <tr key={c.id} onClick={() => setOpen(c)} className="cursor-pointer transition-colors hover:bg-paper">
                   <td className="whitespace-nowrap px-5 py-3 text-muted tabular">
                     <span className="mr-2 inline-block align-middle text-faint">{c.direction === "inbound" ? <ArrowDownLeft size={14} /> : <ArrowUpRight size={14} />}</span>
@@ -91,6 +93,13 @@ export function CallsView({ calls, agents, initialAgent, initialOpen }: { calls:
           </table>
         </div>
         {!list.length && <p className="px-5 py-12 text-center text-muted">No calls match.</p>}
+        {list.length > shown && (
+          <div className="border-t border-line px-5 py-3 text-center">
+            <button onClick={() => setShown((n) => n + 50)} className="rounded-lg px-3 py-1.5 text-[13px] font-medium text-muted transition-colors hover:bg-paper hover:text-ink">
+              Show more ({list.length - shown} older)
+            </button>
+          </div>
+        )}
       </Card>
 
       <div className={cx("fixed inset-0 z-30 bg-ink/20 backdrop-blur-[2px] transition-opacity", open ? "opacity-100" : "pointer-events-none opacity-0")} onClick={() => setOpen(null)} />
@@ -102,6 +111,16 @@ export function CallsView({ calls, agents, initialAgent, initialOpen }: { calls:
 }
 
 function Replay({ call, agent, onClose, isWin }: { call: Call; agent?: AgentLite; onClose: () => void; isWin: boolean }) {
+  // Transcripts load when a call is opened; a call that came with its transcript shows it at once.
+  const [loaded, setLoaded] = useState<{ id: string; lines: TranscriptLine[] } | null>(null);
+  const needs = call.status === "connected" && !call.transcript.length;
+  useEffect(() => {
+    if (!needs) return;
+    let live = true;
+    callTranscript(call.id).then((lines) => { if (live) setLoaded({ id: call.id, lines }); }).catch(() => {});
+    return () => { live = false; };
+  }, [call.id, needs]);
+  const transcript = needs ? (loaded?.id === call.id ? loaded.lines : null) : call.transcript;
   return (
     <>
       <div className="border-b border-line px-6 pb-5 pt-5">
@@ -109,7 +128,7 @@ function Replay({ call, agent, onClose, isWin }: { call: Call; agent?: AgentLite
           <div className="min-w-0">
             <p className="text-[12.5px] text-muted">{call.direction === "inbound" ? "Inbound" : "Outbound"} call with {agent?.name}</p>
             <p className="mt-1 text-[22px] font-semibold leading-tight tracking-[-0.02em] text-ink">{call.name}</p>
-            <p className="mt-1 text-[12.5px] text-faint"><span className="font-mono">{call.phone}</span>, {dayTime(call.startedAt)}</p>
+            <p className="mt-1 text-[12.5px] text-faint"><span className="font-mono">{maskPhone(call.phone)}</span>, {dayTime(call.startedAt)}</p>
           </div>
           <button onClick={onClose} className="ml-auto rounded-lg border border-line p-1.5 text-muted transition-colors hover:border-line-2 hover:text-ink" aria-label="Close"><X size={16} strokeWidth={1.75} /></button>
         </div>
@@ -131,7 +150,11 @@ function Replay({ call, agent, onClose, isWin }: { call: Call; agent?: AgentLite
       )}
 
       <div className="flex-1 space-y-2.5 overflow-y-auto px-5 py-4">
-        {call.transcript.length ? call.transcript.map((l, i) =>
+        {transcript === null ? (
+          <div className="space-y-2.5" aria-label="Loading transcript">
+            {[60, 45, 70].map((w, i) => <div key={i} className={cx("h-12 animate-pulse rounded-xl bg-cold-soft", i % 2 === 1 && "ml-auto")} style={{ width: `${w}%` }} />)}
+          </div>
+        ) : transcript.length ? transcript.map((l, i) =>
           l.who === "action" ? (
             <div key={i} className="flex items-center justify-center gap-1.5 py-1 text-[12.5px] font-medium text-accent-ink"><Zap size={13} strokeWidth={2} /> {l.text}</div>
           ) : (

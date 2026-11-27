@@ -75,3 +75,72 @@ body {
 }
 
 ::selection { background: var(--color-accent-soft); }
+
+/* ---------- Studio credit (StudioFooter) ---------- */
+/* The studio name sits on a soft cobalt marker; it draws in when the credit comes into view. */
+.credit-name {
+  padding-inline: 0.12em;
+  background-image: linear-gradient(var(--color-accent-soft), var(--color-accent-soft));
+  background-repeat: no-repeat;
+  background-position: 0 88%;
+  background-size: 100% 0.42em;
+}
+/* Website and Instagram: two equal buttons. A fill rises from the bottom edge on hover. */
+.credit-btn {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: inline-flex;
+  width: 100%;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding-inline: 1.1rem;
+  border: 1px solid var(--color-line-2);
+  border-radius: 0.6rem;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-size: 13.5px;
+  font-weight: 500;
+  transition: translate 300ms cubic-bezier(.2, .8, .2, 1), box-shadow 300ms cubic-bezier(.2, .8, .2, 1), color 300ms;
+}
+@media (min-width: 640px) { .credit-btn { min-width: 10.5rem; } }
+.credit-btn-accent { background: var(--color-accent); border-color: var(--color-accent); color: #fff; }
+.credit-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background: var(--color-accent-soft);
+  transform: translateY(101%);
+  transition: transform 450ms cubic-bezier(.16, 1, .3, 1);
+}
+.credit-btn-accent::before { background: var(--color-accent-ink); }
+.credit-btn:hover, .credit-btn:focus-visible { translate: 0 -2px; box-shadow: 0 16px 28px -16px rgb(17 17 20 / .45); }
+.credit-btn:hover::before, .credit-btn:focus-visible::before { transform: none; }
+.credit-btn:active { scale: 0.98; }
+.credit-btn-arrow { transition: translate 400ms cubic-bezier(.16, 1, .3, 1); }
+.credit-btn:hover .credit-btn-arrow, .credit-btn:focus-visible .credit-btn-arrow { translate: 2px -2px; }
+/* The glint: a band of light across each button, the second a beat behind the first. */
+.credit-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 32%, rgb(255 255 255 / .55) 50%, transparent 68%);
+  transform: translateX(-110%);
+}
+.credit-btn:not(.credit-btn-accent)::after { background: linear-gradient(105deg, transparent 32%, rgb(51 80 212 / .16) 50%, transparent 68%); }
+@keyframes credit-glint { to { transform: translateX(110%); } }
+@media (prefers-reduced-motion: no-preference) {
+  .credit .credit-name { background-size: 0% 0.42em; transition: background-size 900ms cubic-bezier(.65, 0, .35, 1) 150ms; }
+  .credit.is-in .credit-name { background-size: 100% 0.42em; }
+  .credit.is-in .credit-btn::after { animation: credit-glint 1.4s cubic-bezier(.65, 0, .35, 1) .7s 2; }
+  .credit.is-in li + li .credit-btn::after { animation-delay: .95s; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .credit-btn, .credit-btn::before, .credit-btn-arrow { transition: none; }
+  .credit-btn:hover, .credit-btn:focus-visible, .credit-btn:hover .credit-btn-arrow { translate: none; }
+}

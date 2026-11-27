@@ -3,8 +3,8 @@
 import { createHash, randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
 import { requireUnlocked } from "./gate-server";
-import { mutate, resetToSample } from "./store";
-import type { Agent, Lead } from "./types";
+import { getStore, mutate, restoreAgents } from "./store";
+import type { Agent, Lead, TranscriptLine } from "./types";
 
 const id = (p: string) => `${p}_${randomBytes(5).toString("hex")}`;
 
@@ -73,8 +73,14 @@ export async function saveWebhook(url: string) {
   revalidatePath("/developers");
 }
 
-export async function resetSampleData() {
+export async function restoreDefaultAgents() {
   await requireUnlocked();
-  await resetToSample();
+  await restoreAgents();
   revalidatePath("/", "layout");
+}
+
+// One call's transcript, loaded when the call is opened (the calls list is sent without them).
+export async function callTranscript(callId: string): Promise<TranscriptLine[]> {
+  await requireUnlocked();
+  return (await getStore()).calls.find((c) => c.id === callId)?.transcript ?? [];
 }

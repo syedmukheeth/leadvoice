@@ -1,15 +1,16 @@
-import { connection } from "next/server";
+import { cacheLife, cacheTag } from "next/cache";
 import { Headphones, Mic, MessageSquareText } from "lucide-react";
 import { PageHeader } from "@/components/ui";
 import { languageById, voiceById } from "@/lib/catalog";
-import { getStore } from "@/lib/store";
+import { getStore, LIVE, STORE_TAG } from "@/lib/store";
 import { TalkPicker } from "./TalkPicker";
 
-export const instant = false;
 export const metadata = { title: "Talk to AI" };
 
 export default async function TalkPage() {
-  await connection();
+  "use cache"; // live data, refreshed every minute and on every change (store.ts)
+  cacheLife(LIVE);
+  cacheTag(STORE_TAG);
   const { agents } = await getStore();
   const list = agents.map((a) => ({
     id: a.id, name: a.name, role: a.role, outcome: a.outcome, live: a.status === "live",

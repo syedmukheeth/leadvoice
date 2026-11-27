@@ -39,8 +39,8 @@ function toWavBase64(chunks: Float32Array[], rate: number): string {
   return btoa(bin);
 }
 
-export function TestCall({ agentId, name, languageLabel, open, onClose }: {
-  agentId: string; name: string; languageLabel: string; open: boolean; onClose: () => void;
+export function TestCall({ agentId, name, languageLabel, open, onClose, autoStart = false }: {
+  agentId: string; name: string; languageLabel: string; open: boolean; onClose: () => void; autoStart?: boolean;
 }) {
   const [state, setState] = useState<State>("idle");
   const [lines, setLines] = useState<Line[]>([]);
@@ -205,6 +205,14 @@ export function TestCall({ agentId, name, languageLabel, open, onClose }: {
   }
 
   function close() { hangUp(); set("idle"); onClose(); }
+
+  // Opened as the fallback for a live call that couldn't connect: carry straight on.
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (!autoStart || !open || autoStarted.current) return;
+    autoStarted.current = true;
+    void start();
+  }, [autoStart, open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => () => { // stop the mic if the page unmounts mid-call
     if (mic.current) { mic.current.stream.getTracks().forEach((t) => t.stop()); mic.current.ctx.close(); }

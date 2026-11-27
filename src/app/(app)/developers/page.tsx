@@ -1,16 +1,15 @@
-import { connection } from "next/server";
+import { cacheLife, cacheTag } from "next/cache";
 import { Card, CardHead, PageHeader } from "@/components/ui";
 import { ago } from "@/lib/format";
-import { getStore } from "@/lib/store";
+import { getStore, LIVE, STORE_TAG } from "@/lib/store";
 import { KeyMaker, WebhookForm } from "./DevTools";
-
-// Live workspace data: render on request (loading.tsx is the instant placeholder).
-export const instant = false;
 
 export const metadata = { title: "Integrations" };
 
 export default async function DevelopersPage() {
-  await connection();
+  "use cache"; // live data, refreshed every minute and on every change (store.ts)
+  cacheLife(LIVE);
+  cacheTag(STORE_TAG);
   const { workspace, agents } = await getStore();
   const agentId = agents[0]?.id ?? "ag_xxx";
   return (

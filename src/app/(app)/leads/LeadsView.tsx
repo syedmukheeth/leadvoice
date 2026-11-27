@@ -82,7 +82,7 @@ export function LeadsView({ leads, agents }: { leads: Lead[]; agents: AgentLite[
                   <td className="max-w-[260px] px-3 text-muted"><p className="truncate">{l.notes ?? "—"}</p></td>
                   <td className="px-3 text-[12.5px]">{l.nextAction ?? <span className="text-faint">—</span>}</td>
                   <td className="px-3 text-muted">{agentName(l.agentId)}</td>
-                  <td className="whitespace-nowrap px-5 text-right text-faint">{ago(l.createdAt)}</td>
+                  <td className="whitespace-nowrap px-5 text-right text-faint" suppressHydrationWarning>{ago(l.createdAt)}</td>
                 </tr>
               ))}
             </tbody>

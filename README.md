@@ -7,13 +7,13 @@ Everything client-specific lives in `src/lib/client.ts` (name, city, how names a
 ## Pages
 
 - **Overview:** site visits booked, connect rate, talk time and callbacks, a 14-day call chart and the call funnel.
-- **Talk to AI:** call any agent from the browser, like a phone call. Use Chrome and allow the microphone.
+- **Talk to AI:** call any agent from the browser, like a phone call. Calls are live (Gemini Live): the agent's voice streams back as it speaks, replies start in about a second, and you can cut in any time. If live calls are busy, the call switches to step-by-step mode (Sarvam speech + Gemini) on its own. Every call is saved under Calls. Use Chrome and allow the microphone.
 - **AI agents:** each agent's script, knowledge, actions and voice.
 - **Calls:** every call with filters, search and a transcript replay.
 - **Leads:** status board, paste or CSV import.
 - **Integrations:** a lead API (`POST /api/v1/leads` with a Bearer key) and an outcome webhook for websites, ads and CRMs.
 
-Sample leads and calls are stored in `.data/store.json` (on Vercel, in the server's temp folder, reset on redeploy).
+The desk's call activity (enquiries, calls, retries, callbacks, bookings) is generated from the clock in `src/lib/activity.ts`: two weeks of history during calling hours, growing through the day. What people set or add (agent edits, uploaded leads, Talk to AI calls) is saved in `.data/store.json` (on Vercel, in the server's temp folder, reset on redeploy).
 
 ## Run locally
 

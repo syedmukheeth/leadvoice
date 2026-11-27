@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Phone } from "lucide-react";
-import { TestCall } from "@/components/TestCall";
+import { CallScreen } from "@/components/CallScreen";
 import { Waveform } from "@/components/Waveform";
 import { cx } from "@/components/ui";
 
@@ -38,7 +38,7 @@ export function TalkPicker({ agents }: { agents: TalkAgent[] }) {
         ))}
       </div>
       {open && (
-        <TestCall agentId={open.id} name={open.name} languageLabel={open.languageLabel} open onClose={() => setOpen(null)} />
+        <CallScreen agentId={open.id} name={open.name} languageLabel={open.languageLabel} open onClose={() => setOpen(null)} />
       )}
     </>
   );

@@ -3,6 +3,7 @@
 import { LANGUAGES, VOICE_MODEL, voiceById } from "./catalog";
 import { setting } from "./env";
 import { namesIn } from "./names";
+import { AWARENESS, STYLE, humanRules, nowInIndia } from "./persona";
 import { forSpeech } from "./pronounce";
 import { REST_MS, createCooldown } from "./cooldown";
 import { MODELS, hasForeignScript, parseReply, quotaRestMs, requestBody, saysGoodbye } from "./llm";
@@ -59,24 +60,6 @@ export async function speak(text: string, voiceId: string, language: Language): 
 export interface Turn { who: "agent" | "customer"; text: string }
 export interface Reply { reply: string; action?: string; end: boolean }
 
-// How each language is really spoken on an Indian sales call. Telugu, Hindi and English each get
-// their own reactions, politeness and goodbyes, so no language borrows another's habits.
-const STYLE: Record<Language, string> = {
-  te: `Speak everyday spoken Telugu, the way people in Andhra and Telangana talk on the phone: warm, simple, never bookish. Mix common English words like locals do (site visit, plot, budget, location).
-Polite forms: add "అండి" naturally, and "గారు" after a person's name. Short reactions to start a reply: "అవునండి", "అర్థమైంది", "సరే అండి", "అలాగా", "తప్పకుండా".
-If they are busy: "పర్వాలేదండి, ఎప్పుడు కాల్ చేయమంటారు?". Goodbye: "సరే అండి, ధన్యవాదాలు. మంచి రోజు అండి!"`,
-  hi: `Speak everyday spoken Hindi, the way a polite person talks on a phone call in India: natural Hinglish, never shuddh or bookish Hindi. Use common English words as people do (loan, documents, upload, EMI, site visit) instead of formal words like दस्तावेज़ or ऋण.
-Always "आप", add "जी" after names. Short reactions to start a reply: "जी", "हाँ जी", "अच्छा", "बिल्कुल", "ठीक है", "समझ गई" (female) / "समझ गया" (male).
-If they are busy: "कोई बात नहीं जी, मैं कब कॉल करूँ?". Goodbye: "ठीक है जी, धन्यवाद। आपका दिन अच्छा रहे!"`,
-  en: `Speak friendly, simple Indian English, like a helpful person at a local office: short sentences, contractions (I'll, you're), no slang and no stiff phrases like "I understand your concern", "kindly" or "please be informed".
-Use "sir" or "ma'am" now and then. Short reactions to start a reply: "Sure", "Got it", "Absolutely", "Okay", "No problem", "Great".
-If they are busy: "No problem at all, when should I call you back?". Goodbye: "Thank you, have a great day!"`,
-};
-
-function nowInIndia() {
-  return new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata", weekday: "long", day: "numeric", month: "long", hour: "numeric", minute: "2-digit" }).format(new Date());
-}
-
 // A short reminder of what the agent just said, so it doesn't open, ask or offer the same way again.
 // Small models miss repetition in a long history; naming it explicitly works.
 export function recentReplies(history: Turn[]): string {
@@ -103,17 +86,9 @@ Use ${voice.gender} grammatical forms for yourself.
 At most two short sentences per reply, each under 15 words, and one question at a time. Numbers, prices, dates and times as words; units in full (square yards). No lists, emojis or markdown.
 Start most replies with a short reaction that fits what they just said (never a cheerful "no problem" or "great" to a request you have to turn down), and never open two replies the same way. Use their name or sir/madam only now and then.
 
-BE AWARE OF THE CONVERSATION
-- Before replying, recall what the customer has already told you (name, need, budget, size, timing, worries). Use it, and never ask for it again.
-- Answer what they asked first, then move the call one step towards the goal.
-- Never repeat your introduction after the first line. If they only say hello, reply briefly and carry on.
-- If they switch language, reply in their language.
-- If what they said is unclear or cut off, ask them to repeat in a few words.
-- If they are busy, fix a callback time at once. If they want a person, say the team will call back and agree a time.
-- If they push back on price or doubt you, stay calm: acknowledge it, give one true fact from KNOWLEDGE, and offer a site visit or callback. Never argue.
-- Offer the goal (like a site visit) once. Offer it again only when the customer shows interest or asks about timing, never in back-to-back replies.
-- When the goal is agreed, confirm the details once, say what happens next (for example the location or a reminder on WhatsApp), and ask if there's anything else before saying goodbye.
-- You are an AI assistant: say so if asked, never announce it otherwise. Never pressure.
+${humanRules(agent.language)}
+
+${AWARENESS}
 
 How the call should go:
 ${agent.script}

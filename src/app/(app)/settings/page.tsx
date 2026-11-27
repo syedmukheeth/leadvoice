@@ -1,12 +1,9 @@
-import { connection } from "next/server";
+import { cacheLife, cacheTag } from "next/cache";
 import { BadgeCheck, Phone, ShieldCheck } from "lucide-react";
 import { Card, CardHead, PageHeader } from "@/components/ui";
 import { CLIENT } from "@/lib/client";
-import { getStore } from "@/lib/store";
-import { ResetSample } from "./ResetSample";
-
-// Live workspace data: render on request (loading.tsx is the instant placeholder).
-export const instant = false;
+import { getStore, LIVE, STORE_TAG } from "@/lib/store";
+import { RestoreAgents } from "./RestoreAgents";
 
 export const metadata = { title: "Settings" };
 
@@ -19,7 +16,9 @@ const RULES: [string, string][] = [
 ];
 
 export default async function SettingsPage() {
-  await connection();
+  "use cache"; // live data, refreshed every minute and on every change (store.ts)
+  cacheLife(LIVE);
+  cacheTag(STORE_TAG);
   const { workspace } = await getStore();
   return (
     <>
@@ -55,8 +54,8 @@ export default async function SettingsPage() {
         </Card>
 
         <Card className="xl:col-span-2">
-          <CardHead title="Demo data" hint="Sample leads and calls shown until live calling starts" />
-          <div className="px-5 pb-5"><ResetSample /></div>
+          <CardHead title="AI agents" hint="Undo edits to the agents" />
+          <div className="px-5 pb-5"><RestoreAgents /></div>
         </Card>
       </div>
     </>

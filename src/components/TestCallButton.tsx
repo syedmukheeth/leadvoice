@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Phone } from "lucide-react";
-import { TestCall } from "./TestCall";
+import { CallScreen } from "./CallScreen";
 import { Button } from "./ui";
 
 export function TestCallButton({ agentId, name, languageLabel, autoOpen = false }: {
@@ -12,7 +12,7 @@ export function TestCallButton({ agentId, name, languageLabel, autoOpen = false 
   return (
     <>
       <Button variant="accent" onClick={() => setOpen(true)}><Phone size={15} /> Test call</Button>
-      <TestCall agentId={agentId} name={name} languageLabel={languageLabel} open={open} onClose={() => setOpen(false)} />
+      <CallScreen agentId={agentId} name={name} languageLabel={languageLabel} open={open} onClose={() => setOpen(false)} />
     </>
   );
 }

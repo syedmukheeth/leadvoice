@@ -1,16 +1,13 @@
 import Link from "next/link";
 import { ArrowDownRight, ArrowRight, ArrowUpRight, Minus } from "lucide-react";
-import { connection } from "next/server";
+import { cacheLife, cacheTag } from "next/cache";
 import { Funnel, Spark, TrendChart, TrendLegend } from "@/components/charts";
-import { Card, CardHead, LeadBadge, PageHeader, Tag, cx } from "@/components/ui";
+import { Card, CardHead, LeadBadge, PageHeader, cx } from "@/components/ui";
 import { Waveform } from "@/components/Waveform";
 import { languageById, voiceById } from "@/lib/catalog";
 import { ago, maskPhone, mmss, num, pct, pluralOutcome } from "@/lib/format";
 import { daily, metrics, since } from "@/lib/metrics";
-import { getStore } from "@/lib/store";
-
-// Live workspace data: render on request (loading.tsx is the instant placeholder).
-export const instant = false;
+import { getStore, LIVE, STORE_TAG } from "@/lib/store";
 
 export const metadata = { title: "Overview" };
 
@@ -34,7 +31,9 @@ function Delta({ now, prev, upIs }: { now: number; prev: number; upIs: "good" | 
 }
 
 export default async function Dashboard() {
-  await connection(); // live numbers: render on every request
+  "use cache"; // live data, refreshed every minute and on every change (store.ts)
+  cacheLife(LIVE);
+  cacheTag(STORE_TAG);
   const { agents, calls, leads } = await getStore();
   const week = since(calls, 7);
   const prev = calls.filter((c) => !week.includes(c) && since(calls, 14).includes(c));
@@ -50,7 +49,6 @@ export default async function Dashboard() {
   const mainWins = winsBy(mainOutcome);
   const hot = leads.filter((l) => l.status === "hot").slice(0, 5);
   const wins = calls.filter((c) => c.outcome && agents.some((a) => a.outcome === c.outcome)).slice(0, 5);
-
 
   const kpis = [
     { label: "Wins", value: num(m.outcomes), now: m.outcomes, prev: mp.outcomes, upIs: "good" as const,
@@ -102,7 +100,7 @@ export default async function Dashboard() {
               { label: "Dialled", value: m.calls },
               { label: "Connected", value: m.connected },
               { label: "Interested", value: week.filter((c) => c.leadStatus === "hot" || c.leadStatus === "warm").length },
-              { label: mainOutcome, value: m.outcomes },
+              { label: "Won", value: m.outcomes },
             ]} />
             <p className="mt-auto border-t border-line pt-4 text-[12.5px] leading-relaxed text-muted">
               <span className="font-medium text-ink">{m.callbacks} callbacks</span> scheduled from this week&apos;s calls.
@@ -157,12 +155,15 @@ export default async function Dashboard() {
             {hot.map((l) => (
               <li key={l.id} className="flex items-center gap-3 px-5 py-3">
                 <div className="min-w-0 flex-1">
-                  <p className="flex items-baseline gap-2 text-[13.5px] font-medium text-ink">
-                    {l.name}<span className="font-mono text-[11.5px] font-normal text-faint">{maskPhone(l.phone)}</span>
+                  <p className="flex min-w-0 items-baseline gap-2 text-[13.5px] font-medium text-ink">
+                    <span className="truncate">{l.name}</span>
+                    <span className="shrink-0 font-mono text-[11.5px] font-normal text-faint">{maskPhone(l.phone)}</span>
                   </p>
-                  <p className="truncate text-[12.5px] text-muted">{l.notes}</p>
+                  <p className="truncate text-[12.5px] text-muted">
+                    {l.nextAction && <span className="font-medium text-accent-ink">{l.nextAction}</span>}
+                    {l.nextAction && l.notes && " · "}{l.notes}
+                  </p>
                 </div>
-                {l.nextAction && <Tag className="hidden sm:inline-flex">{l.nextAction}</Tag>}
                 <LeadBadge status={l.status} />
               </li>
             ))}
@@ -175,8 +176,9 @@ export default async function Dashboard() {
               <li key={c.id}>
                 <Link href={`/calls?open=${c.id}`} className="group flex items-center gap-3 px-5 py-3 transition-colors hover:bg-paper">
                   <div className="min-w-0 flex-1">
-                    <p className="flex items-baseline gap-2 text-[13.5px] font-medium text-ink">
-                      {c.name}<span className="text-[11.5px] font-normal text-faint">{ago(c.startedAt)}</span>
+                    <p className="flex min-w-0 items-baseline gap-2 text-[13.5px] font-medium text-ink">
+                      <span className="truncate">{c.name}</span>
+                      <span className="shrink-0 text-[11.5px] font-normal text-faint">{ago(c.startedAt)}</span>
                     </p>
                     <p className="truncate text-[12.5px] text-muted">{c.summary}</p>
                   </div>

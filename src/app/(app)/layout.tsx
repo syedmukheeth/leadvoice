@@ -1,19 +1,16 @@
 import Link from "next/link";
 import { Headset } from "lucide-react";
 import { Logo, MobileNav, Sidebar } from "@/components/Sidebar";
+import { StudioFooter } from "@/components/StudioFooter";
 import { getStore } from "@/lib/store";
-
-// Every page here shows live workspace data, so pages render on request (with loading.tsx
-// as the instant placeholder) instead of being prerendered.
-export const instant = false;
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const store = await getStore();
   const onDuty = store.agents.filter((a) => a.status === "live").length;
   return (
-    <div className="min-h-screen">
+    <div className="flex min-h-screen flex-col">
       <Sidebar onDuty={onDuty} />
-      <div className="lg:pl-[240px]">
+      <div className="flex flex-1 flex-col lg:pl-[240px]">
         <header className="sticky top-0 z-20 border-b border-line bg-paper/80 backdrop-blur-md">
           <div className="mx-auto flex h-14 max-w-[1200px] items-center gap-3 px-5 lg:px-10">
             <Link href="/dashboard" className="lg:hidden"><Logo /></Link>
@@ -31,7 +28,8 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           </div>
           <MobileNav />
         </header>
-        <main className="mx-auto max-w-[1200px] px-5 py-8 lg:px-10 lg:py-10">{children}</main>
+        <main className="mx-auto w-full max-w-[1200px] flex-1 px-5 py-8 lg:px-10 lg:py-10">{children}</main>
+        <StudioFooter />
       </div>
     </div>
   );

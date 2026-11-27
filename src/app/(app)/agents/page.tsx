@@ -1,19 +1,18 @@
 import Link from "next/link";
-import { connection } from "next/server";
+import { cacheLife, cacheTag } from "next/cache";
 import { Card, PageHeader, Tag, cx } from "@/components/ui";
 import { Waveform } from "@/components/Waveform";
 import { ACTIONS, languageById, voiceById } from "@/lib/catalog";
 import { num, pct } from "@/lib/format";
 import { metrics, since } from "@/lib/metrics";
-import { getStore } from "@/lib/store";
-
-// Live workspace data: render on request (loading.tsx is the instant placeholder).
-export const instant = false;
+import { getStore, LIVE, STORE_TAG } from "@/lib/store";
 
 export const metadata = { title: "AI agents" };
 
 export default async function AgentsPage() {
-  await connection();
+  "use cache"; // live data, refreshed every minute and on every change (store.ts)
+  cacheLife(LIVE);
+  cacheTag(STORE_TAG);
   const { agents, calls, workspace } = await getStore();
   return (
     <>
