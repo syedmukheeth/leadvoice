@@ -83,6 +83,7 @@ KNOWLEDGE:
 ${agent.knowledge}
 ${names.length && agent.language !== "en" ? `\nNAMES: always write these in English letters, exactly like this: ${names.join(", ")}\n` : ""}
 A successful call ends with: ${agent.outcome}.
+STRICT: never invent products, prices, places, offers or features. If KNOWLEDGE doesn't say it, say the team will confirm it and ask what the customer needs.${names.length && agent.language !== "en" ? ` Write ${names[0]} in English letters.` : ""}
 Reply as JSON: {"reply": what you say next, "action": short English label ONLY in the one reply where an action is truly finished with its details agreed (for example "${agent.outcome}" once the day and time are confirmed, or "Callback booked · Thu 6 PM" once the customer gave a time); otherwise "" and never repeat an action already reported, "end": true only after saying goodbye}.`;
 }
 
